@@ -13,15 +13,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const email = credentials?.email as string;
         const password = credentials?.password as string;
 
-        if (!email || !password) return null;
+        if (!email || !password) {
+          console.log("[auth] missing credentials");
+          return null;
+        }
 
         const adminEmail = process.env.ADMIN_EMAIL;
         const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
-        if (!adminEmail || !adminPasswordHash) return null;
-        if (email !== adminEmail) return null;
+        console.log("[auth] email:", JSON.stringify(email), "adminEmail:", JSON.stringify(adminEmail));
+        console.log("[auth] hash length:", adminPasswordHash?.length, "starts:", adminPasswordHash?.slice(0, 7));
+
+        if (!adminEmail || !adminPasswordHash) {
+          console.log("[auth] missing env vars");
+          return null;
+        }
+        if (email !== adminEmail) {
+          console.log("[auth] email mismatch");
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, adminPasswordHash);
+        console.log("[auth] bcrypt valid:", valid);
         if (!valid) return null;
 
         return { id: "1", email: adminEmail, name: "Admin" };
