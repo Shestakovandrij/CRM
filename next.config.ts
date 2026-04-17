@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ["@prisma/client"],
+  serverExternalPackages: ["@prisma/client"],
+  turbopack: {
+    root: __dirname,
   },
 };
 
