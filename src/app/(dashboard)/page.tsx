@@ -65,7 +65,7 @@ export default async function DashboardPage() {
               Немає лідів. <Link href="/leads" className="text-[var(--accent)]">Додати першого</Link>
             </div>
           ) : (
-            stats.recentLeads.map((lead) => (
+            stats.recentLeads.map((lead: typeof stats.recentLeads[number]) => (
               <Link key={lead.id} href="/leads"
                 className="flex items-center justify-between px-5 py-3 hover:bg-[var(--surface-2)] transition-colors">
                 <div>
