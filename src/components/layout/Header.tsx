@@ -21,60 +21,98 @@ export default function Header() {
     .sort((a, b) => b[0].length - a[0].length)
     .find(([href]) => (href === "/" ? path === "/" : path.startsWith(href)))?.[1] ?? "CRM";
 
+  const segments = title === "Dashboard" ? ["Dashboard"] : ["Dashboard", title];
+
   return (
     <header
-      className="flex items-center gap-4 px-6 py-3.5 shrink-0"
+      className="flex items-center gap-4 px-6 py-3 shrink-0 relative z-10"
       style={{
-        background: "rgba(13, 15, 26, 0.75)",
+        background: "rgba(3, 9, 5, 0.80)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        borderBottom: "1px solid rgba(0,229,160,0.07)",
       }}
     >
-      {/* Page title */}
-      <h1 className="text-base font-semibold text-[var(--text)] min-w-[120px]">{title}</h1>
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-sm min-w-0 shrink-0">
+        {segments.map((seg, i) => (
+          <span key={seg} className="flex items-center gap-1.5">
+            {i > 0 && <span className="text-[var(--text-dim)]">/</span>}
+            <span
+              className={
+                i === segments.length - 1
+                  ? "font-semibold text-[var(--text)]"
+                  : "text-[var(--text-muted)]"
+              }
+            >
+              {seg}
+            </span>
+          </span>
+        ))}
+      </div>
 
       {/* Search */}
-      <div className="flex-1 max-w-md relative">
+      <div className="flex-1 max-w-sm relative">
         <Search
-          size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          size={13}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
         />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Пошук..."
+          placeholder="Search..."
           className="w-full pl-9 pr-4 py-2 text-sm rounded-xl text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none transition-all duration-200"
           style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.07)",
+            background: "rgba(0,229,160,0.04)",
+            border: "1px solid rgba(0,229,160,0.08)",
           }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(79,142,247,0.5)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "rgba(0,229,160,0.30)";
+            e.currentTarget.style.background = "rgba(0,229,160,0.07)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "rgba(0,229,160,0.08)";
+            e.currentTarget.style.background = "rgba(0,229,160,0.04)";
+          }}
         />
       </div>
 
-      <div className="flex items-center gap-3 ml-auto">
-        {/* Notifications */}
+      <div className="flex items-center gap-2.5 ml-auto">
+        {/* Notification bell */}
         <button
-          className="relative w-8 h-8 flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
+          className="relative w-8 h-8 flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+          style={{
+            background: "rgba(0,229,160,0.05)",
+            border: "1px solid rgba(0,229,160,0.09)",
+          }}
         >
-          <Bell size={15} />
+          <Bell size={14} />
           <span
-            className="absolute top-1 right-1 w-2 h-2 rounded-full"
-            style={{ background: "var(--orange)", boxShadow: "0 0 6px rgba(249,115,22,0.8)" }}
+            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
+            style={{
+              background: "var(--accent)",
+              boxShadow: "0 0 6px var(--accent-glow)",
+            }}
           />
         </button>
 
+        {/* Divider */}
+        <div
+          className="h-5 w-px"
+          style={{ background: "rgba(0,229,160,0.10)" }}
+        />
+
         {/* Avatar */}
-        <div className="flex items-center gap-2.5">
-          <span className="text-sm text-[var(--text-muted)] hidden sm:block">Hi, Admin</span>
+        <div className="flex items-center gap-2.5 cursor-pointer group">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-medium text-[var(--text)]">Admin</p>
+            <p className="text-[10px] text-[var(--text-muted)]">CRM SHSTKV</p>
+          </div>
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-black shrink-0 transition-all duration-200"
             style={{
-              background: "linear-gradient(135deg, #4f8ef7, #7c3aed)",
-              boxShadow: "0 0 14px rgba(79,142,247,0.5)",
+              background: "linear-gradient(135deg, #00e5a0, #00c070)",
+              boxShadow: "0 0 14px rgba(0,229,160,0.40)",
             }}
           >
             A

@@ -12,16 +12,27 @@ import {
   YAxis,
   LineChart,
   Line,
+  Area,
+  AreaChart,
 } from "recharts";
 
-const CARD = {
-  background: "rgba(19, 22, 40, 0.85)",
-  backdropFilter: "blur(18px)",
-  WebkitBackdropFilter: "blur(18px)",
-  border: "1px solid rgba(255,255,255,0.09)",
-  boxShadow: "0 4px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
+export const CARD = {
+  background: "rgba(10, 24, 15, 0.88)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(0,229,160,0.10)",
+  boxShadow: "0 4px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(0,229,160,0.06)",
   borderRadius: 16,
 } as React.CSSProperties;
+
+const TOOLTIP_STYLE = {
+  background: "rgba(3,9,5,0.97)",
+  border: "1px solid rgba(0,229,160,0.18)",
+  borderRadius: 10,
+  color: "#e8f5ef",
+  fontSize: 12,
+  boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
+};
 
 interface LeadStatus {
   status: string;
@@ -33,29 +44,20 @@ interface DealStatus {
   _count: { status: number };
 }
 
-interface Props {
-  leadsByStatus: LeadStatus[];
-  dealsByStatus: DealStatus[];
-  taskDone: number;
-  taskTotal: number;
-  totalLeads: number;
-  conversion: number;
-}
-
 const STATUS_COLORS: Record<string, string> = {
-  NEW: "#4f8ef7",
-  CONTACTED: "#22d3ee",
+  NEW:         "#00e5a0",
+  CONTACTED:   "#22d3ee",
   NEGOTIATION: "#a78bfa",
-  WON: "#34d399",
-  LOST: "#f87171",
+  WON:         "#00e5a0",
+  LOST:        "#f87171",
 };
 
 const DEAL_COLORS: Record<string, string> = {
-  PLANNING: "#4f8ef7",
-  DESIGN: "#22d3ee",
+  PLANNING:    "#00e5a0",
+  DESIGN:      "#22d3ee",
   DEVELOPMENT: "#a78bfa",
-  TESTING: "#fbbf24",
-  COMPLETED: "#34d399",
+  TESTING:     "#fbbf24",
+  COMPLETED:   "#00c070",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -75,14 +77,14 @@ export function LeadDonutChart({ data }: { data: LeadStatus[] }) {
   const chartData = data.map((d) => ({
     name: STATUS_LABELS[d.status] ?? d.status,
     value: d._count.status,
-    color: STATUS_COLORS[d.status] ?? "#6b7a99",
+    color: STATUS_COLORS[d.status] ?? "#4a7a62",
   }));
 
   const total = chartData.reduce((s, d) => s + d.value, 0);
 
   if (total === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+      <div className="flex items-center justify-center h-36 text-[var(--text-muted)] text-sm">
         Немає даних
       </div>
     );
@@ -104,31 +106,31 @@ export function LeadDonutChart({ data }: { data: LeadStatus[] }) {
               stroke="none"
             >
               {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
+                <Cell key={i} fill={entry.color} fillOpacity={0.90} />
               ))}
             </Pie>
-            <Tooltip
-              contentStyle={{
-                background: "rgba(19,22,40,0.95)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 10,
-                color: "#e8eaf6",
-                fontSize: 12,
-              }}
-            />
+            <Tooltip contentStyle={TOOLTIP_STYLE} />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-2xl font-bold text-[var(--text)]">{total}</span>
+          <span
+            className="text-2xl font-bold"
+            style={{ color: "var(--accent)", textShadow: "0 0 16px var(--accent-glow)" }}
+          >
+            {total}
+          </span>
           <span className="text-xs text-[var(--text-muted)]">лідів</span>
         </div>
       </div>
       <div className="flex flex-col gap-2 min-w-0">
         {chartData.map((d) => (
           <div key={d.name} className="flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: d.color }} />
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ background: d.color, boxShadow: `0 0 4px ${d.color}60` }}
+            />
             <span className="text-[var(--text-muted)] truncate">{d.name}</span>
-            <span className="ml-auto font-medium text-[var(--text)]">{d.value}</span>
+            <span className="ml-auto font-semibold text-[var(--text)]">{d.value}</span>
           </div>
         ))}
       </div>
@@ -146,22 +148,25 @@ export function TaskProgressRing({ done, total }: { done: number; total: number 
     <div className="flex flex-col items-center justify-center gap-3">
       <div className="relative">
         <svg width={128} height={128} style={{ transform: "rotate(-90deg)" }}>
-          <circle cx={64} cy={64} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={10} />
           <circle
-            cx={64}
-            cy={64}
-            r={r}
+            cx={64} cy={64} r={r}
             fill="none"
-            stroke="url(#ring-grad)"
+            stroke="rgba(0,229,160,0.10)"
+            strokeWidth={10}
+          />
+          <circle
+            cx={64} cy={64} r={r}
+            fill="none"
+            stroke="url(#ring-grad-new)"
             strokeWidth={10}
             strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.8s ease" }}
+            style={{ transition: "stroke-dashoffset 0.8s ease", filter: "drop-shadow(0 0 6px rgba(0,229,160,0.5))" }}
           />
           <defs>
-            <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#4f8ef7" />
+            <linearGradient id="ring-grad-new" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#00e5a0" />
               <stop offset="100%" stopColor="#22d3ee" />
             </linearGradient>
           </defs>
@@ -169,7 +174,7 @@ export function TaskProgressRing({ done, total }: { done: number; total: number 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
             className="text-3xl font-bold"
-            style={{ color: "#4f8ef7", textShadow: "0 0 20px rgba(79,142,247,0.6)" }}
+            style={{ color: "var(--accent)", textShadow: "0 0 20px var(--accent-glow)" }}
           >
             {pct}%
           </span>
@@ -184,12 +189,12 @@ export function DealBarChart({ data }: { data: DealStatus[] }) {
   const chartData = data.map((d) => ({
     name: STATUS_LABELS[d.status] ?? d.status,
     value: d._count.status,
-    fill: DEAL_COLORS[d.status] ?? "#6b7a99",
+    fill: DEAL_COLORS[d.status] ?? "#4a7a62",
   }));
 
   if (chartData.every((d) => d.value === 0)) {
     return (
-      <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+      <div className="flex items-center justify-center h-32 text-[var(--text-muted)] text-sm">
         Немає даних
       </div>
     );
@@ -200,20 +205,14 @@ export function DealBarChart({ data }: { data: DealStatus[] }) {
       <BarChart data={chartData} barSize={28}>
         <XAxis
           dataKey="name"
-          tick={{ fontSize: 10, fill: "#6b7a99" }}
+          tick={{ fontSize: 9, fill: "#4a7a62" }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis hide allowDecimals={false} />
         <Tooltip
-          cursor={{ fill: "rgba(79,142,247,0.05)" }}
-          contentStyle={{
-            background: "rgba(19,22,40,0.95)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 10,
-            color: "#e8eaf6",
-            fontSize: 12,
-          }}
+          cursor={{ fill: "rgba(0,229,160,0.04)" }}
+          contentStyle={TOOLTIP_STYLE}
         />
         <Bar dataKey="value" name="Deals" radius={[6, 6, 0, 0]}>
           {chartData.map((entry, i) => (
@@ -228,25 +227,24 @@ export function DealBarChart({ data }: { data: DealStatus[] }) {
 export function MiniLineChart({ points }: { points: number[] }) {
   const data = points.map((v, i) => ({ i, v }));
   return (
-    <ResponsiveContainer width="100%" height={60}>
-      <LineChart data={data}>
+    <ResponsiveContainer width="100%" height={56}>
+      <AreaChart data={data}>
         <defs>
-          <linearGradient id="line-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#4f8ef7" />
-            <stop offset="100%" stopColor="#22d3ee" />
+          <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00e5a0" stopOpacity={0.25} />
+            <stop offset="100%" stopColor="#00e5a0" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <Line
+        <Area
           type="monotone"
           dataKey="v"
-          stroke="url(#line-grad)"
-          strokeWidth={2.5}
+          stroke="#00e5a0"
+          strokeWidth={2}
+          fill="url(#area-grad)"
           dot={false}
           strokeLinecap="round"
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
-
-export { CARD };

@@ -43,16 +43,12 @@ async function getStats() {
   };
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  NEW: "text-blue-400 bg-blue-400/10",
-  CONTACTED: "text-cyan-400 bg-cyan-400/10",
-  NEGOTIATION: "text-violet-400 bg-violet-400/10",
-  WON: "text-emerald-400 bg-emerald-400/10",
-  LOST: "text-red-400 bg-red-400/10",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  NEW: "Новий", CONTACTED: "Контакт", NEGOTIATION: "Переговори", WON: "Виграно", LOST: "Програно",
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  NEW:         { label: "Новий",       cls: "text-[#00e5a0] bg-[#00e5a0]/10 border border-[#00e5a0]/20" },
+  CONTACTED:   { label: "Контакт",    cls: "text-cyan-400 bg-cyan-400/10 border border-cyan-400/20" },
+  NEGOTIATION: { label: "Переговори", cls: "text-violet-400 bg-violet-400/10 border border-violet-400/20" },
+  WON:         { label: "Виграно",    cls: "text-[#00e5a0] bg-[#00e5a0]/10 border border-[#00e5a0]/20" },
+  LOST:        { label: "Програно",   cls: "text-red-400 bg-red-400/10 border border-red-400/20" },
 };
 
 export default async function DashboardPage() {
@@ -65,26 +61,26 @@ export default async function DashboardPage() {
       value: stats.totalLeads,
       icon: Users,
       href: "/leads",
-      color: "#4f8ef7",
-      glow: "rgba(79,142,247,0.4)",
-      trend: "+12%",
+      color: "#00e5a0",
+      glow: "rgba(0,229,160,0.45)",
+      trend: "+12% цього місяця",
     },
     {
       label: "Активні угоди",
       value: stats.totalDeals,
       icon: Briefcase,
       href: "/clients",
-      color: "#a78bfa",
-      glow: "rgba(167,139,250,0.4)",
-      trend: "+5%",
+      color: "#22d3ee",
+      glow: "rgba(34,211,238,0.40)",
+      trend: "+5% нових",
     },
     {
       label: "Задачі",
       value: stats.totalTasks,
       icon: CheckSquare,
       href: "/tasks",
-      color: "#22d3ee",
-      glow: "rgba(34,211,238,0.4)",
+      color: "#a78bfa",
+      glow: "rgba(167,139,250,0.40)",
       trend: stats.overdueTasks > 0 ? `-${stats.overdueTasks} прострочено` : "Все вчасно",
     },
     {
@@ -92,13 +88,12 @@ export default async function DashboardPage() {
       value: `${stats.conversion}%`,
       icon: TrendingUp,
       href: "/pipeline",
-      color: "#34d399",
-      glow: "rgba(52,211,153,0.4)",
-      trend: "WON / всього",
+      color: "#00e5a0",
+      glow: "rgba(0,229,160,0.45)",
+      trend: "WON / всього лідів",
     },
   ];
 
-  // Fake sparkline data proportional to real counts (visual only)
   const sparklines = [
     [2, 4, 3, 6, 5, 8, stats.totalLeads],
     [1, 3, 2, 4, 3, 5, stats.totalDeals],
@@ -107,18 +102,22 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-5 relative z-10">
+
       {/* Top stat cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {topCards.map((c, i) => {
           const Icon = c.icon;
           return (
-            <Link key={c.label} href={c.href} className="block group" style={CARD}>
+            <Link key={c.label} href={c.href} className="block group cursor-pointer" style={CARD}>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: `${c.color}20`, border: `1px solid ${c.color}30` }}
+                    style={{
+                      background: `${c.color}18`,
+                      border: `1px solid ${c.color}28`,
+                    }}
                   >
                     <Icon size={16} style={{ color: c.color }} />
                   </div>
@@ -128,17 +127,20 @@ export default async function DashboardPage() {
                     style={{ color: c.color }}
                   />
                 </div>
-                <p className="text-xs text-[var(--text-muted)] mb-1">{c.label}</p>
+
+                <p className="text-xs text-[var(--text-muted)] mb-1 font-medium">{c.label}</p>
                 <p
                   className="text-3xl font-bold mb-3"
-                  style={{ color: c.color, textShadow: `0 0 20px ${c.glow}` }}
+                  style={{ color: c.color, textShadow: `0 0 24px ${c.glow}` }}
                 >
                   {c.value}
                 </p>
-                <div className="mb-3">
+
+                <div className="mb-2.5">
                   <MiniLineChart points={sparklines[i]} />
                 </div>
-                <p className="text-xs" style={{ color: `${c.color}aa` }}>{c.trend}</p>
+
+                <p className="text-xs" style={{ color: `${c.color}99` }}>{c.trend}</p>
               </div>
             </Link>
           );
@@ -149,22 +151,22 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Lead status donut */}
         <div style={CARD} className="p-5">
-          <p className="text-sm font-semibold text-[var(--text)] mb-1">Статуси лідів</p>
+          <p className="text-sm font-semibold text-[var(--text)] mb-0.5">Статуси лідів</p>
           <p className="text-xs text-[var(--text-muted)] mb-5">Розподіл за статусом</p>
           <LeadDonutChart data={stats.leadsByStatus} />
         </div>
 
         {/* Deal pipeline bar */}
         <div style={CARD} className="p-5">
-          <p className="text-sm font-semibold text-[var(--text)] mb-1">Pipeline угод</p>
+          <p className="text-sm font-semibold text-[var(--text)] mb-0.5">Pipeline угод</p>
           <p className="text-xs text-[var(--text-muted)] mb-4">По стадіях</p>
           <DealBarChart data={stats.dealsByStatus} />
         </div>
 
         {/* Task progress ring */}
         <div style={CARD} className="p-5 flex flex-col">
-          <p className="text-sm font-semibold text-[var(--text)] mb-1">Задачі</p>
-          <p className="text-xs text-[var(--text-muted)] mb-4">Виконання</p>
+          <p className="text-sm font-semibold text-[var(--text)] mb-0.5">Задачі</p>
+          <p className="text-xs text-[var(--text-muted)] mb-4">Прогрес виконання</p>
           <div className="flex-1 flex items-center justify-center">
             <TaskProgressRing done={stats.taskDone} total={taskTotal} />
           </div>
@@ -175,7 +177,7 @@ export default async function DashboardPage() {
       <div style={CARD} className="overflow-hidden">
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+          style={{ borderBottom: "1px solid rgba(0,229,160,0.07)" }}
         >
           <div>
             <p className="text-sm font-semibold text-[var(--text)]">Останні ліди</p>
@@ -183,7 +185,7 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/leads"
-            className="text-xs font-medium transition-opacity hover:opacity-80"
+            className="text-xs font-semibold transition-opacity hover:opacity-80"
             style={{ color: "var(--accent)", textShadow: "0 0 10px var(--accent-glow)" }}
           >
             Переглянути всіх →
@@ -203,13 +205,21 @@ export default async function DashboardPage() {
               <Link
                 key={lead.id}
                 href="/leads"
-                className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
-                style={i < stats.recentLeads.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.05)" } : {}}
+                className="flex items-center justify-between px-5 py-3.5 hover:bg-[rgba(0,229,160,0.03)] transition-colors cursor-pointer"
+                style={
+                  i < stats.recentLeads.length - 1
+                    ? { borderBottom: "1px solid rgba(0,229,160,0.05)" }
+                    : {}
+                }
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-semibold text-white shrink-0"
-                    style={{ background: "rgba(79,142,247,0.2)", border: "1px solid rgba(79,142,247,0.3)" }}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{
+                      background: "rgba(0,229,160,0.12)",
+                      border: "1px solid rgba(0,229,160,0.20)",
+                      color: "var(--accent)",
+                    }}
                   >
                     {lead.name[0]?.toUpperCase()}
                   </div>
@@ -221,9 +231,9 @@ export default async function DashboardPage() {
                   </div>
                 </div>
                 <span
-                  className={`text-xs px-2.5 py-1 rounded-lg font-medium ${STATUS_COLORS[lead.status] ?? "bg-zinc-500/10 text-zinc-400"}`}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-medium ${STATUS_BADGE[lead.status]?.cls ?? "bg-zinc-500/10 text-zinc-400 border border-zinc-400/20"}`}
                 >
-                  {STATUS_LABELS[lead.status] ?? lead.status}
+                  {STATUS_BADGE[lead.status]?.label ?? lead.status}
                 </span>
               </Link>
             ))}

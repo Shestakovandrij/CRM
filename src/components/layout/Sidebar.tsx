@@ -11,6 +11,7 @@ import {
   Kanban,
   Send,
   LogOut,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,30 +29,45 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="w-52 shrink-0 flex flex-col h-full"
+      className="w-56 shrink-0 flex flex-col h-full relative z-10"
       style={{
-        background: "rgba(10, 12, 22, 0.80)",
+        background: "rgba(3, 9, 5, 0.96)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        borderRight: "1px solid rgba(255,255,255,0.07)",
+        borderRight: "1px solid rgba(0,229,160,0.08)",
       }}
     >
       {/* Logo */}
-      <div className="px-5 py-5 flex items-center gap-3">
+      <div className="px-5 pt-6 pb-5 flex items-center gap-3">
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center"
+          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
           style={{
-            background: "linear-gradient(135deg, #4f8ef7, #7c3aed)",
-            boxShadow: "0 0 16px rgba(79,142,247,0.5)",
+            background: "linear-gradient(135deg, #00e5a0, #00c070)",
+            boxShadow: "0 0 20px rgba(0,229,160,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
           }}
         >
-          <span className="text-xs font-bold text-white">C</span>
+          <Zap size={15} className="text-black" strokeWidth={2.5} />
         </div>
-        <span className="text-sm font-semibold text-[var(--text)] tracking-wide">CRM</span>
+        <div>
+          <span className="text-sm font-bold text-[var(--text)] tracking-wide">CRM</span>
+          <span
+            className="text-xs block font-medium"
+            style={{ color: "var(--accent)", lineHeight: 1 }}
+          >
+            SHSTKV
+          </span>
+        </div>
+      </div>
+
+      {/* Section label */}
+      <div className="px-5 mb-2">
+        <span className="text-[10px] font-semibold tracking-widest text-[var(--text-dim)] uppercase">
+          Menu
+        </span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {nav.map(({ href, icon: Icon, label }) => {
           const active = href === "/" ? path === "/" : path.startsWith(href);
           return (
@@ -59,22 +75,31 @@ export default function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
-                active ? "text-white" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer",
+                active
+                  ? "text-[var(--accent)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.03]"
               )}
               style={
                 active
                   ? {
-                      background: "rgba(79,142,247,0.15)",
-                      borderLeft: "2px solid var(--accent)",
-                      boxShadow: "inset 0 0 20px rgba(79,142,247,0.08)",
+                      background: "rgba(0,229,160,0.10)",
+                      boxShadow: "inset 0 0 24px rgba(0,229,160,0.05)",
+                      border: "1px solid rgba(0,229,160,0.14)",
                     }
-                  : { borderLeft: "2px solid transparent" }
+                  : { border: "1px solid transparent" }
               }
             >
               <Icon
-                size={15}
-                style={active ? { color: "var(--accent)", filter: "drop-shadow(0 0 6px var(--accent-glow))" } : {}}
+                size={16}
+                style={
+                  active
+                    ? {
+                        color: "var(--accent)",
+                        filter: "drop-shadow(0 0 6px rgba(0,229,160,0.6))",
+                      }
+                    : {}
+                }
               />
               {label}
             </Link>
@@ -83,13 +108,16 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <div
+        className="px-3 py-4 mt-auto"
+        style={{ borderTop: "1px solid rgba(0,229,160,0.06)" }}
+      >
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors duration-150"
-          style={{ borderLeft: "2px solid transparent" }}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-red-500/[0.06] transition-all duration-150 cursor-pointer"
+          style={{ border: "1px solid transparent" }}
         >
-          <LogOut size={15} />
+          <LogOut size={16} />
           Log out
         </button>
       </div>
