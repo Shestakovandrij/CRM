@@ -42,5 +42,7 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# Bot session (sensitive cookies)
+# Bot (local only)
 bot/instagram-session.json
+bot/node_modules/
+bot/.env
