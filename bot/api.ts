@@ -33,28 +33,40 @@ export class CrmApi {
     };
   }
 
+  private async checkResponse(r: Response, label: string) {
+    if (!r.ok) {
+      const text = await r.text().catch(() => "");
+      throw new Error(`[${label}] HTTP ${r.status}: ${text.slice(0, 200)}`);
+    }
+    return r;
+  }
+
   async getCampaigns(): Promise<Campaign[]> {
     const r = await fetch(`${this.baseUrl}/api/campaigns`, { headers: this.headers() });
+    await this.checkResponse(r, "getCampaigns");
     return r.json();
   }
 
   async getCampaign(id: string): Promise<Campaign> {
     const r = await fetch(`${this.baseUrl}/api/campaigns/${id}`, { headers: this.headers() });
+    await this.checkResponse(r, "getCampaign");
     return r.json();
   }
 
   async setCampaignStatus(id: string, status: CampaignStatus): Promise<void> {
-    await fetch(`${this.baseUrl}/api/campaigns/${id}`, {
+    const r = await fetch(`${this.baseUrl}/api/campaigns/${id}`, {
       method: "PUT",
       headers: this.headers(),
       body: JSON.stringify({ status }),
     });
+    await this.checkResponse(r, "setCampaignStatus");
   }
 
   async getNextInQueue(campaignId: string): Promise<QueueResult> {
     const r = await fetch(`${this.baseUrl}/api/campaigns/${campaignId}/queue`, {
       headers: this.headers(),
     });
+    await this.checkResponse(r, "getNextInQueue");
     return r.json();
   }
 
@@ -63,10 +75,11 @@ export class CrmApi {
     recipientId: string,
     data: { status: RecipientStatus; sentAt?: string; errorMessage?: string },
   ): Promise<void> {
-    await fetch(`${this.baseUrl}/api/campaigns/${campaignId}/recipients/${recipientId}`, {
+    const r = await fetch(`${this.baseUrl}/api/campaigns/${campaignId}/recipients/${recipientId}`, {
       method: "PUT",
       headers: this.headers(),
       body: JSON.stringify(data),
     });
+    await this.checkResponse(r, "updateRecipient");
   }
 }
