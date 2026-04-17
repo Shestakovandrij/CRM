@@ -24,6 +24,13 @@ const statusColors: Record<string, string> = {
   LOST: "bg-red-500/15 text-red-400",
 };
 
+const glassCard = {
+  background: "rgba(12, 12, 22, 0.6)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(255,255,255,0.07)",
+} as React.CSSProperties;
+
 export default async function DashboardPage() {
   const stats = await getStats();
 
@@ -44,35 +51,60 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {cards.map((c) => (
-          <Link key={c.label} href={c.href}
-            className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 hover:border-[var(--accent)]/40 transition-colors cursor-pointer">
+          <Link
+            key={c.label}
+            href={c.href}
+            className="rounded-2xl p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
+            style={glassCard}
+          >
             <p className="text-xs text-[var(--text-muted)]">{c.label}</p>
             <p className={`text-2xl font-semibold mt-1 ${c.color}`}>{c.value}</p>
           </Link>
         ))}
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={glassCard}
+      >
+        <div
+          className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+        >
           <p className="text-sm font-medium text-[var(--text)]">Останні ліди</p>
-          <Link href="/leads" className="text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">
+          <Link
+            href="/leads"
+            className="text-xs text-[var(--accent)] hover:opacity-80 transition-opacity"
+            style={{ textShadow: "0 0 12px var(--accent-glow)" }}
+          >
             Переглянути всіх →
           </Link>
         </div>
-        <div className="divide-y divide-[var(--border)]">
+        <div>
           {stats.recentLeads.length === 0 ? (
             <div className="text-center py-8 text-[var(--text-muted)] text-sm">
-              Немає лідів. <Link href="/leads" className="text-[var(--accent)]">Додати першого</Link>
+              Немає лідів.{" "}
+              <Link href="/leads" className="text-[var(--accent)]">
+                Додати першого
+              </Link>
             </div>
           ) : (
-            stats.recentLeads.map((lead: typeof stats.recentLeads[number]) => (
-              <Link key={lead.id} href="/leads"
-                className="flex items-center justify-between px-5 py-3 hover:bg-[var(--surface-2)] transition-colors">
+            stats.recentLeads.map((lead: (typeof stats.recentLeads)[number]) => (
+              <Link
+                key={lead.id}
+                href="/leads"
+                className="flex items-center justify-between px-5 py-3 transition-colors duration-150"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+              >
                 <div>
                   <p className="text-sm text-[var(--text)]">{lead.name}</p>
-                  {lead.instagram && <p className="text-xs text-[var(--text-muted)]">{lead.instagram}</p>}
+                  {lead.instagram && (
+                    <p className="text-xs text-[var(--text-muted)]">{lead.instagram}</p>
+                  )}
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-md ${statusColors[lead.status] ?? "bg-zinc-500/15 text-zinc-400"}`}>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-lg ${statusColors[lead.status] ?? "bg-zinc-500/15 text-zinc-400"}`}
+                >
                   {lead.status}
                 </span>
               </Link>

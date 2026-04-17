@@ -33,19 +33,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-sm px-4">
+        {/* Logo mark */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-[var(--text)]">CRM</h1>
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold text-white mx-auto mb-4"
+            style={{
+              background: "var(--accent)",
+              boxShadow: "0 0 40px var(--accent-glow)",
+            }}
+          >
+            C
+          </div>
+          <h1 className="text-2xl font-semibold text-[var(--text)]">Ласкаво просимо</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">Увійдіть у свій акаунт</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-6 space-y-4"
+          className="rounded-2xl p-7 space-y-5"
+          style={{
+            background: "rgba(10, 10, 18, 0.65)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            boxShadow: "0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+          }}
         >
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
               Email
             </label>
             <input
@@ -54,13 +71,19 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
-              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              className="w-full px-4 py-3 rounded-xl text-[var(--text)] text-sm placeholder:text-[var(--text-muted)] outline-none transition-all duration-200"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(124,58,237,0.6)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
               placeholder="Admin"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
               Пароль
             </label>
             <input
@@ -68,13 +91,19 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              className="w-full px-4 py-3 rounded-xl text-[var(--text)] text-sm placeholder:text-[var(--text-muted)] outline-none transition-all duration-200"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(124,58,237,0.6)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="text-xs text-[var(--danger)] bg-[var(--danger)]/10 px-3 py-2 rounded-lg">
+            <p className="text-xs text-[var(--danger)] bg-[var(--danger)]/10 px-4 py-3 rounded-xl">
               {error}
             </p>
           )}
@@ -82,7 +111,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200"
+            style={{
+              background: "var(--accent)",
+              boxShadow: "0 0 24px var(--accent-glow)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 40px var(--accent-glow)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 24px var(--accent-glow)")}
           >
             {loading ? "Вхід..." : "Увійти"}
           </button>
