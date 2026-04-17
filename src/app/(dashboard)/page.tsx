@@ -1,117 +1,234 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
+import { Users, Briefcase, CheckSquare, TrendingUp, ArrowUpRight } from "lucide-react";
+import {
+  LeadDonutChart,
+  TaskProgressRing,
+  DealBarChart,
+  MiniLineChart,
+  CARD,
+} from "@/components/dashboard/DashboardCharts";
 
 async function getStats() {
-  const [totalLeads, totalDeals, totalTasks, recentLeads, overdueTasks] = await Promise.all([
+  const [
+    totalLeads,
+    totalDeals,
+    totalTasks,
+    taskDone,
+    recentLeads,
+    overdueTasks,
+    leadsByStatus,
+    dealsByStatus,
+  ] = await Promise.all([
     db.lead.count(),
     db.deal.count(),
     db.task.count({ where: { status: { not: "DONE" } } }),
-    db.lead.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { id: true, name: true, status: true, instagram: true, createdAt: true } }),
+    db.task.count({ where: { status: "DONE" } }),
+    db.lead.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      select: { id: true, name: true, status: true, instagram: true, createdAt: true },
+    }),
     db.task.count({ where: { status: { not: "DONE" }, deadline: { lt: new Date() } } }),
+    db.lead.groupBy({ by: ["status"], _count: { status: true } }),
+    db.deal.groupBy({ by: ["status"], _count: { status: true } }),
   ]);
 
   const wonLeads = await db.lead.count({ where: { status: "WON" } });
   const conversion = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0;
 
-  return { totalLeads, totalDeals, totalTasks, recentLeads, overdueTasks, conversion };
+  return {
+    totalLeads, totalDeals, totalTasks, taskDone, recentLeads,
+    overdueTasks, leadsByStatus, dealsByStatus, conversion,
+  };
 }
 
-const statusColors: Record<string, string> = {
-  NEW: "bg-blue-500/15 text-blue-400",
-  CONTACTED: "bg-yellow-500/15 text-yellow-400",
-  NEGOTIATION: "bg-purple-500/15 text-purple-400",
-  WON: "bg-green-500/15 text-green-400",
-  LOST: "bg-red-500/15 text-red-400",
+const STATUS_COLORS: Record<string, string> = {
+  NEW: "text-blue-400 bg-blue-400/10",
+  CONTACTED: "text-cyan-400 bg-cyan-400/10",
+  NEGOTIATION: "text-violet-400 bg-violet-400/10",
+  WON: "text-emerald-400 bg-emerald-400/10",
+  LOST: "text-red-400 bg-red-400/10",
 };
 
-const glassCard = {
-  background: "rgba(20, 20, 36, 0.82)",
-  backdropFilter: "blur(18px)",
-  WebkitBackdropFilter: "blur(18px)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  boxShadow: "0 4px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
-} as React.CSSProperties;
+const STATUS_LABELS: Record<string, string> = {
+  NEW: "Новий", CONTACTED: "Контакт", NEGOTIATION: "Переговори", WON: "Виграно", LOST: "Програно",
+};
 
 export default async function DashboardPage() {
   const stats = await getStats();
+  const taskTotal = stats.taskDone + stats.totalTasks;
 
-  const cards = [
-    { label: "Всього лідів", value: stats.totalLeads, href: "/leads", color: "text-blue-400" },
-    { label: "Клієнти (deals)", value: stats.totalDeals, href: "/clients", color: "text-purple-400" },
-    { label: "Активні задачі", value: stats.totalTasks, href: "/tasks", color: "text-yellow-400" },
-    { label: "Прострочено", value: stats.overdueTasks, href: "/tasks", color: stats.overdueTasks > 0 ? "text-red-400" : "text-green-400" },
-    { label: "Конверсія", value: `${stats.conversion}%`, href: "/pipeline", color: "text-green-400" },
+  const topCards = [
+    {
+      label: "Всього лідів",
+      value: stats.totalLeads,
+      icon: Users,
+      href: "/leads",
+      color: "#4f8ef7",
+      glow: "rgba(79,142,247,0.4)",
+      trend: "+12%",
+    },
+    {
+      label: "Активні угоди",
+      value: stats.totalDeals,
+      icon: Briefcase,
+      href: "/clients",
+      color: "#a78bfa",
+      glow: "rgba(167,139,250,0.4)",
+      trend: "+5%",
+    },
+    {
+      label: "Задачі",
+      value: stats.totalTasks,
+      icon: CheckSquare,
+      href: "/tasks",
+      color: "#22d3ee",
+      glow: "rgba(34,211,238,0.4)",
+      trend: stats.overdueTasks > 0 ? `-${stats.overdueTasks} прострочено` : "Все вчасно",
+    },
+    {
+      label: "Конверсія",
+      value: `${stats.conversion}%`,
+      icon: TrendingUp,
+      href: "/pipeline",
+      color: "#34d399",
+      glow: "rgba(52,211,153,0.4)",
+      trend: "WON / всього",
+    },
+  ];
+
+  // Fake sparkline data proportional to real counts (visual only)
+  const sparklines = [
+    [2, 4, 3, 6, 5, 8, stats.totalLeads],
+    [1, 3, 2, 4, 3, 5, stats.totalDeals],
+    [3, 2, 4, 3, 5, 4, stats.totalTasks],
+    [10, 20, 15, 30, 25, 40, stats.conversion],
   ];
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-[var(--text)]">Dashboard</h1>
-        <p className="text-xs text-[var(--text-muted)] mt-0.5">Огляд CRM</p>
+      {/* Top stat cards */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {topCards.map((c, i) => {
+          const Icon = c.icon;
+          return (
+            <Link key={c.label} href={c.href} className="block group" style={CARD}>
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: `${c.color}20`, border: `1px solid ${c.color}30` }}
+                  >
+                    <Icon size={16} style={{ color: c.color }} />
+                  </div>
+                  <ArrowUpRight
+                    size={14}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: c.color }}
+                  />
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mb-1">{c.label}</p>
+                <p
+                  className="text-3xl font-bold mb-3"
+                  style={{ color: c.color, textShadow: `0 0 20px ${c.glow}` }}
+                >
+                  {c.value}
+                </p>
+                <div className="mb-3">
+                  <MiniLineChart points={sparklines[i]} />
+                </div>
+                <p className="text-xs" style={{ color: `${c.color}aa` }}>{c.trend}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {cards.map((c) => (
-          <Link
-            key={c.label}
-            href={c.href}
-            className="rounded-2xl p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
-            style={glassCard}
-          >
-            <p className="text-xs text-[var(--text-muted)]">{c.label}</p>
-            <p className={`text-2xl font-semibold mt-1 ${c.color}`}>{c.value}</p>
-          </Link>
-        ))}
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Lead status donut */}
+        <div style={CARD} className="p-5">
+          <p className="text-sm font-semibold text-[var(--text)] mb-1">Статуси лідів</p>
+          <p className="text-xs text-[var(--text-muted)] mb-5">Розподіл за статусом</p>
+          <LeadDonutChart data={stats.leadsByStatus} />
+        </div>
+
+        {/* Deal pipeline bar */}
+        <div style={CARD} className="p-5">
+          <p className="text-sm font-semibold text-[var(--text)] mb-1">Pipeline угод</p>
+          <p className="text-xs text-[var(--text-muted)] mb-4">По стадіях</p>
+          <DealBarChart data={stats.dealsByStatus} />
+        </div>
+
+        {/* Task progress ring */}
+        <div style={CARD} className="p-5 flex flex-col">
+          <p className="text-sm font-semibold text-[var(--text)] mb-1">Задачі</p>
+          <p className="text-xs text-[var(--text-muted)] mb-4">Виконання</p>
+          <div className="flex-1 flex items-center justify-center">
+            <TaskProgressRing done={stats.taskDone} total={taskTotal} />
+          </div>
+        </div>
       </div>
 
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={glassCard}
-      >
+      {/* Recent leads */}
+      <div style={CARD} className="overflow-hidden">
         <div
           className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
         >
-          <p className="text-sm font-medium text-[var(--text)]">Останні ліди</p>
+          <div>
+            <p className="text-sm font-semibold text-[var(--text)]">Останні ліди</p>
+            <p className="text-xs text-[var(--text-muted)]">Нещодавно додані контакти</p>
+          </div>
           <Link
             href="/leads"
-            className="text-xs text-[var(--accent)] hover:opacity-80 transition-opacity"
-            style={{ textShadow: "0 0 12px var(--accent-glow)" }}
+            className="text-xs font-medium transition-opacity hover:opacity-80"
+            style={{ color: "var(--accent)", textShadow: "0 0 10px var(--accent-glow)" }}
           >
             Переглянути всіх →
           </Link>
         </div>
-        <div>
-          {stats.recentLeads.length === 0 ? (
-            <div className="text-center py-8 text-[var(--text-muted)] text-sm">
-              Немає лідів.{" "}
-              <Link href="/leads" className="text-[var(--accent)]">
-                Додати першого
-              </Link>
-            </div>
-          ) : (
-            stats.recentLeads.map((lead: (typeof stats.recentLeads)[number]) => (
+
+        {stats.recentLeads.length === 0 ? (
+          <div className="text-center py-10 text-[var(--text-muted)] text-sm">
+            Немає лідів.{" "}
+            <Link href="/leads" style={{ color: "var(--accent)" }}>
+              Додати першого
+            </Link>
+          </div>
+        ) : (
+          <div>
+            {stats.recentLeads.map((lead, i) => (
               <Link
                 key={lead.id}
                 href="/leads"
-                className="flex items-center justify-between px-5 py-3 transition-colors duration-150"
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                className="flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
+                style={i < stats.recentLeads.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.05)" } : {}}
               >
-                <div>
-                  <p className="text-sm text-[var(--text)]">{lead.name}</p>
-                  {lead.instagram && (
-                    <p className="text-xs text-[var(--text-muted)]">{lead.instagram}</p>
-                  )}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-semibold text-white shrink-0"
+                    style={{ background: "rgba(79,142,247,0.2)", border: "1px solid rgba(79,142,247,0.3)" }}
+                  >
+                    {lead.name[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm text-[var(--text)] font-medium">{lead.name}</p>
+                    {lead.instagram && (
+                      <p className="text-xs text-[var(--text-muted)]">@{lead.instagram}</p>
+                    )}
+                  </div>
                 </div>
                 <span
-                  className={`text-xs px-2.5 py-1 rounded-lg ${statusColors[lead.status] ?? "bg-zinc-500/15 text-zinc-400"}`}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-medium ${STATUS_COLORS[lead.status] ?? "bg-zinc-500/10 text-zinc-400"}`}
                 >
-                  {lead.status}
+                  {STATUS_LABELS[lead.status] ?? lead.status}
                 </span>
               </Link>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

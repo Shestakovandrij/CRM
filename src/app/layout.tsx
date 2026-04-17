@@ -12,41 +12,32 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={`${geist.variable} h-full dark`}>
+    <html lang="uk" className={`${geist.variable} h-full`}>
       <body className="h-full bg-[var(--background)] text-[var(--text)]">
-        {/* Animated aurora background */}
+        {/* Aurora background */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
           <div
             className="blob-1 absolute rounded-full"
             style={{
-              width: 720,
-              height: 720,
-              top: -220,
-              left: -160,
-              background: "radial-gradient(circle, rgba(124,58,237,0.28) 0%, transparent 70%)",
-              filter: "blur(80px)",
+              width: 800, height: 800, top: -280, left: -200,
+              background: "radial-gradient(circle, rgba(79,142,247,0.18) 0%, transparent 70%)",
+              filter: "blur(90px)",
             }}
           />
           <div
             className="blob-2 absolute rounded-full"
             style={{
-              width: 640,
-              height: 640,
-              bottom: -180,
-              right: -120,
-              background: "radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)",
-              filter: "blur(90px)",
+              width: 680, height: 680, bottom: -200, right: -150,
+              background: "radial-gradient(circle, rgba(124,58,237,0.16) 0%, transparent 70%)",
+              filter: "blur(100px)",
             }}
           />
           <div
             className="blob-3 absolute rounded-full"
             style={{
-              width: 480,
-              height: 480,
-              top: "45%",
-              left: "55%",
-              background: "radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 70%)",
-              filter: "blur(70px)",
+              width: 500, height: 500, top: "50%", left: "60%",
+              background: "radial-gradient(circle, rgba(34,211,238,0.10) 0%, transparent 70%)",
+              filter: "blur(80px)",
             }}
           />
         </div>

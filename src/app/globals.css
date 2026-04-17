@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #06060d;
-  --surface: rgba(22, 22, 36, 0.82);
-  --surface-2: rgba(30, 30, 48, 0.75);
-  --border: rgba(255, 255, 255, 0.11);
-  --border-light: rgba(255, 255, 255, 0.18);
-  --text: #f0f0ff;
-  --text-muted: #7070a0;
-  --accent: #38bdf8;
-  --accent-hover: #0ea5e9;
-  --accent-glow: rgba(56, 189, 248, 0.45);
+  --background: #0d0f1a;
+  --surface: rgba(19, 22, 40, 0.88);
+  --surface-2: rgba(26, 30, 54, 0.80);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.14);
+  --text: #e8eaf6;
+  --text-muted: #6b7a99;
+  --accent: #4f8ef7;
+  --accent-hover: #3b7de8;
+  --accent-glow: rgba(79, 142, 247, 0.45);
+  --cyan: #22d3ee;
+  --orange: #f97316;
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
@@ -23,9 +25,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   background: var(--background);
@@ -34,58 +34,45 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Animated background blobs ─── */
+/* ─── Animated blobs ─── */
 @keyframes aurora-1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  25%       { transform: translate(70px, -90px) scale(1.15); }
-  50%       { transform: translate(-50px, -30px) scale(0.9); }
-  75%       { transform: translate(25px, 70px) scale(1.08); }
+  25%       { transform: translate(60px, -80px) scale(1.12); }
+  50%       { transform: translate(-40px, -30px) scale(0.9); }
+  75%       { transform: translate(20px, 60px) scale(1.06); }
 }
 @keyframes aurora-2 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33%       { transform: translate(-90px, 70px) scale(1.12); }
-  66%       { transform: translate(60px, -40px) scale(0.88); }
+  33%       { transform: translate(-80px, 60px) scale(1.1); }
+  66%       { transform: translate(50px, -35px) scale(0.88); }
 }
 @keyframes aurora-3 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  40%       { transform: translate(50px, -70px) scale(1.18); }
-  80%       { transform: translate(-40px, 50px) scale(0.85); }
+  40%       { transform: translate(45px, -65px) scale(1.15); }
+  80%       { transform: translate(-35px, 45px) scale(0.86); }
 }
-
 .blob-1 { animation: aurora-1 24s ease-in-out infinite; }
 .blob-2 { animation: aurora-2 30s ease-in-out infinite; }
 .blob-3 { animation: aurora-3 20s ease-in-out infinite; }
 
-/* ─── Glass utilities ─── */
-.glass {
-  background: rgba(16, 16, 28, 0.80);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+/* ─── Glass card ─── */
+.glass-card {
+  background: rgba(19, 22, 40, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
 }
 
-.glass-card {
-  background: rgba(20, 20, 36, 0.78);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+.glass-card:hover {
+  border-color: rgba(79, 142, 247, 0.25);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(79,142,247,0.1), inset 0 1px 0 rgba(255,255,255,0.08);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-
-/* ─── Accent glow button ─── */
-.btn-accent {
-  background: var(--accent);
-  box-shadow: 0 0 20px var(--accent-glow);
-  transition: box-shadow 0.2s, opacity 0.2s;
-}
-.btn-accent:hover {
-  opacity: 0.9;
-  box-shadow: 0 0 32px var(--accent-glow);
-}
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
