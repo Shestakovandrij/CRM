@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Play, Pause, Upload, Plus, Trash2,
   CheckCircle2, XCircle, Clock, AlertCircle, Loader2, Copy, Check,
+  RotateCcw, Square,
 } from "lucide-react";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
@@ -65,11 +66,24 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   });
 
   const statusMut = useMutation({
-    mutationFn: (status: CampaignStatus) =>
+    mutationFn: ({ status, resetQueue }: { status: CampaignStatus; resetQueue?: boolean }) =>
       fetch(`/api/campaigns/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...(resetQueue && { resetQueue: true }) }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign", id] });
+      qc.invalidateQueries({ queryKey: ["campaigns"] });
+    },
+  });
+
+  const resetMut = useMutation({
+    mutationFn: () =>
+      fetch(`/api/campaigns/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetQueue: true }),
       }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campaign", id] }),
   });
@@ -216,24 +230,63 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             Додати
           </button>
 
+          {errors > 0 && campaign.status !== "RUNNING" && (
+            <button
+              onClick={() => resetMut.mutate()}
+              disabled={resetMut.isPending}
+              title="Скинути помилки назад в чергу"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] text-sm text-orange-400 hover:bg-orange-400/10 transition-colors disabled:opacity-50"
+            >
+              <RotateCcw size={14} />
+              Retry помилки ({errors})
+            </button>
+          )}
+
+          {(campaign.status === "RUNNING" || campaign.status === "PAUSED") && (
+            <button
+              onClick={() => {
+                if (confirm("Завершити кампанію?")) statusMut.mutate({ status: "COMPLETED" });
+              }}
+              disabled={statusMut.isPending}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] text-sm text-[var(--text-muted)] hover:text-blue-400 hover:border-blue-400/40 transition-colors"
+            >
+              <Square size={14} />
+              Завершити
+            </button>
+          )}
+
           {campaign.status === "RUNNING" ? (
             <button
-              onClick={() => statusMut.mutate("PAUSED")}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-yellow-400/10 text-yellow-400 text-sm font-medium hover:bg-yellow-400/20 transition-colors"
+              onClick={() => statusMut.mutate({ status: "PAUSED" })}
+              disabled={statusMut.isPending}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-yellow-400/10 text-yellow-400 text-sm font-medium hover:bg-yellow-400/20 transition-colors disabled:opacity-50"
             >
               <Pause size={14} />
               Пауза
             </button>
-          ) : campaign.status !== "COMPLETED" ? (
+          ) : campaign.status === "COMPLETED" ? (
             <button
-              onClick={() => statusMut.mutate("RUNNING")}
-              disabled={total === 0}
+              onClick={() => {
+                if (confirm("Перезапустити? Всі відправлені зберігаються, тільки помилки скинуться.")) {
+                  statusMut.mutate({ status: "RUNNING", resetQueue: true });
+                }
+              }}
+              disabled={statusMut.isPending}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] text-sm font-medium hover:text-[var(--text)] transition-colors disabled:opacity-50"
+            >
+              <RotateCcw size={14} />
+              Перезапустити
+            </button>
+          ) : (
+            <button
+              onClick={() => statusMut.mutate({ status: "RUNNING" })}
+              disabled={total === 0 || statusMut.isPending}
               className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-40"
             >
               <Play size={14} />
-              Запустити
+              {campaign.status === "PAUSED" ? "Продовжити" : "Запустити"}
             </button>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -257,18 +310,24 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
 
       {/* Bot info panel */}
       <div className="px-6 py-3 border-b border-[var(--border)] bg-[var(--surface-2)]/50 shrink-0">
-        <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-          <span className="text-[var(--text)]">🤖 Telegram-бот:</span>
-          <span>ID кампанії для бота:</span>
-          <code
-            onClick={() => { navigator.clipboard.writeText(id); }}
-            className="px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--accent)] font-mono cursor-pointer hover:opacity-80"
-            title="Клікни щоб скопіювати"
-          >
-            {id}
-          </code>
-          <span className="text-[var(--border)]">·</span>
-          <span>Команда: <code className="text-[var(--accent)]">/run {id}</code></span>
+        <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] flex-wrap">
+          <span className="font-medium text-[var(--text)]">Telegram-бот:</span>
+          <span className="flex items-center gap-1.5">
+            ID:
+            <code
+              onClick={() => { navigator.clipboard.writeText(id); }}
+              className="px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--accent)] font-mono cursor-pointer hover:opacity-80"
+              title="Клікни щоб скопіювати"
+            >
+              {id}
+            </code>
+          </span>
+          <span className="text-[var(--border)]">|</span>
+          <span>Запустити: <code className="text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">/run {id}</code></span>
+          <span className="text-[var(--border)]">|</span>
+          <span>Пауза: <code className="text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded">/pause</code></span>
+          <span className="text-[var(--border)]">|</span>
+          <span>Статус: <code className="text-[var(--text-muted)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded">/status</code></span>
         </div>
       </div>
 

@@ -29,6 +29,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const body = await req.json();
 
+  if (body.resetQueue) {
+    await db.campaignRecipient.updateMany({
+      where: { campaignId: id, status: { in: ["ERROR", "NOT_FOUND", "SENDING"] } },
+      data: { status: "PENDING", errorMessage: null },
+    });
+  }
+
   const campaign = await db.campaign.update({
     where: { id },
     data: {
