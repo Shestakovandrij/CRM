@@ -49,13 +49,13 @@ export default function LoginPage() {
               Email
             </label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
               className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              placeholder="admin@example.com"
+              placeholder="Admin"
             />
           </div>
 
