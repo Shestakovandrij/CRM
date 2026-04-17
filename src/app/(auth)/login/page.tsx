@@ -40,8 +40,8 @@ export default function LoginPage() {
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold text-white mx-auto mb-4"
             style={{
-              background: "var(--accent)",
-              boxShadow: "0 0 40px var(--accent-glow)",
+              background: "linear-gradient(135deg, #38bdf8, #0ea5e9)",
+              boxShadow: "0 0 48px rgba(56,189,248,0.5)",
             }}
           >
             C
@@ -113,11 +113,11 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200"
             style={{
-              background: "var(--accent)",
-              boxShadow: "0 0 24px var(--accent-glow)",
+              background: "linear-gradient(135deg, #38bdf8, #0ea5e9)",
+              boxShadow: "0 0 28px rgba(56,189,248,0.5)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 40px var(--accent-glow)")}
-            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 24px var(--accent-glow)")}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 48px rgba(56,189,248,0.65)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 28px rgba(56,189,248,0.5)")}
           >
             {loading ? "Вхід..." : "Увійти"}
           </button>

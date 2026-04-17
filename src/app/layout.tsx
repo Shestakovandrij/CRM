@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               height: 720,
               top: -220,
               left: -160,
-              background: "radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(124,58,237,0.28) 0%, transparent 70%)",
               filter: "blur(80px)",
             }}
           />
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               height: 640,
               bottom: -180,
               right: -120,
-              background: "radial-gradient(circle, rgba(79,70,229,0.18) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)",
               filter: "blur(90px)",
             }}
           />

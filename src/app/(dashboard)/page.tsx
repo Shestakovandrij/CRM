@@ -25,10 +25,11 @@ const statusColors: Record<string, string> = {
 };
 
 const glassCard = {
-  background: "rgba(12, 12, 22, 0.6)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  background: "rgba(20, 20, 36, 0.82)",
+  backdropFilter: "blur(18px)",
+  WebkitBackdropFilter: "blur(18px)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  boxShadow: "0 4px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
 } as React.CSSProperties;
 
 export default async function DashboardPage() {

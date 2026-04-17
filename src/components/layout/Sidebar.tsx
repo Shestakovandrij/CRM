@@ -43,7 +43,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-2">
           <div
             className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white"
-            style={{ background: "var(--accent)", boxShadow: "0 0 16px var(--accent-glow)" }}
+            style={{ background: "linear-gradient(135deg, #38bdf8, #0ea5e9)", boxShadow: "0 0 20px rgba(56,189,248,0.5)" }}
           >
             C
           </div>
@@ -67,9 +67,9 @@ export default function Sidebar() {
               style={
                 active
                   ? {
-                      background: "rgba(124,58,237,0.2)",
+                      background: "rgba(56,189,248,0.12)",
                       borderLeft: "2px solid var(--accent)",
-                      boxShadow: "inset 0 0 20px rgba(124,58,237,0.1)",
+                      boxShadow: "inset 0 0 20px rgba(56,189,248,0.08)",
                     }
                   : { borderLeft: "2px solid transparent" }
               }

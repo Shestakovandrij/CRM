@@ -1,0 +1,184 @@
+import { chromium, Browser, BrowserContext, Page } from "playwright";
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dir = dirname(fileURLToPath(import.meta.url));
+const SESSION_FILE = join(__dir, "instagram-session.json");
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function randomDelay(min = 500, max = 1500) {
+  return sleep(min + Math.random() * (max - min));
+}
+
+export class InstagramBot {
+  private browser: Browser | null = null;
+  private context: BrowserContext | null = null;
+  private page: Page | null = null;
+
+  async launch(headless = false) {
+    this.browser = await chromium.launch({
+      headless,
+      args: [
+        "--no-sandbox",
+        "--disable-blink-features=AutomationControlled",
+      ],
+    });
+
+    const storageState = existsSync(SESSION_FILE)
+      ? JSON.parse(readFileSync(SESSION_FILE, "utf-8"))
+      : undefined;
+
+    this.context = await this.browser.newContext({
+      storageState,
+      userAgent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      viewport: { width: 1280, height: 800 },
+      locale: "uk-UA",
+    });
+
+    // Hide playwright fingerprints
+    await this.context.addInitScript(() => {
+      Object.defineProperty(navigator, "webdriver", { get: () => undefined });
+    });
+
+    this.page = await this.context.newPage();
+  }
+
+  async login(username: string, password: string): Promise<void> {
+    if (!this.page) throw new Error("Browser not launched");
+
+    await this.page.goto("https://www.instagram.com/accounts/login/", { waitUntil: "networkidle" });
+    await randomDelay(1000, 2000);
+
+    // Handle cookie popup if it appears
+    const cookieBtn = this.page.locator("button:has-text('Allow'), button:has-text('Accept')").first();
+    if (await cookieBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await cookieBtn.click();
+      await randomDelay();
+    }
+
+    await this.page.fill('input[name="username"]', username);
+    await randomDelay(300, 700);
+    await this.page.fill('input[name="password"]', password);
+    await randomDelay(500, 1000);
+    await this.page.click('button[type="submit"]');
+
+    // Wait for redirect after login
+    await this.page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 30000 });
+    await randomDelay(2000, 3000);
+
+    await this.saveSession();
+    console.log("✅ Instagram: успішно залогінився");
+  }
+
+  async isLoggedIn(): Promise<boolean> {
+    if (!this.page) return false;
+    try {
+      await this.page.goto("https://www.instagram.com/", { waitUntil: "domcontentloaded", timeout: 15000 });
+      await randomDelay(1000, 2000);
+      // If redirected to login page, we're not logged in
+      return !this.page.url().includes("/login");
+    } catch {
+      return false;
+    }
+  }
+
+  async saveSession() {
+    if (!this.context) return;
+    const state = await this.context.storageState();
+    writeFileSync(SESSION_FILE, JSON.stringify(state));
+  }
+
+  async sendDM(username: string, message: string): Promise<void> {
+    if (!this.page) throw new Error("Browser not launched");
+
+    const cleanUsername = username.replace(/^@/, "");
+
+    // Navigate to user profile
+    await this.page.goto(`https://www.instagram.com/${cleanUsername}/`, {
+      waitUntil: "domcontentloaded",
+      timeout: 20000,
+    });
+    await randomDelay(1500, 2500);
+
+    // Check if account exists
+    const pageText = await this.page.textContent("body");
+    if (
+      pageText?.includes("Sorry, this page isn't available") ||
+      pageText?.includes("Page not found") ||
+      this.page.url().includes("/explore/")
+    ) {
+      throw new Error("NOT_FOUND");
+    }
+
+    // Find and click Message button — try multiple selectors
+    const messageBtnSelectors = [
+      'div[role="button"]:has-text("Message")',
+      'a[role="button"]:has-text("Message")',
+      'button:has-text("Message")',
+      '[aria-label="Message"]',
+    ];
+
+    let clicked = false;
+    for (const sel of messageBtnSelectors) {
+      const btn = this.page.locator(sel).first();
+      if (await btn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await btn.click();
+        clicked = true;
+        break;
+      }
+    }
+
+    if (!clicked) {
+      throw new Error("CANT_MESSAGE: кнопка Message не знайдена (приватний або заблокований акаунт)");
+    }
+
+    await randomDelay(1500, 3000);
+
+    // Wait for DM input — Instagram uses contenteditable div
+    const inputSelectors = [
+      'div[aria-label="Message"]',
+      'div[contenteditable="true"]',
+      'textarea[placeholder]',
+      'div[role="textbox"]',
+    ];
+
+    let input = null;
+    for (const sel of inputSelectors) {
+      const el = this.page.locator(sel).last();
+      if (await el.isVisible({ timeout: 5000 }).catch(() => false)) {
+        input = el;
+        break;
+      }
+    }
+
+    if (!input) {
+      throw new Error("CANT_TYPE: поле вводу повідомлення не знайдено");
+    }
+
+    await input.click();
+    await randomDelay(500, 1000);
+
+    // Type with human-like delays
+    await this.page.keyboard.type(message, { delay: 40 + Math.random() * 60 });
+    await randomDelay(800, 1500);
+
+    // Send via Enter key (most reliable across Instagram UI versions)
+    await this.page.keyboard.press("Enter");
+    await randomDelay(2000, 3000);
+
+    // Save session after successful send to keep cookies fresh
+    await this.saveSession();
+  }
+
+  async close() {
+    await this.browser?.close();
+    this.browser = null;
+    this.context = null;
+    this.page = null;
+  }
+}
