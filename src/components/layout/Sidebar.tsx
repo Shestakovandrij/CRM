@@ -9,6 +9,7 @@ import {
   Briefcase,
   CheckSquare,
   Kanban,
+  Send,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ const nav = [
   { href: "/pipeline", icon: Kanban, label: "Pipeline" },
   { href: "/clients", icon: Briefcase, label: "Clients" },
   { href: "/tasks", icon: CheckSquare, label: "Tasks" },
+  { href: "/campaigns", icon: Send, label: "Campaigns" },
 ];
 
 export default function Sidebar() {

@@ -106,3 +106,40 @@ enum ActivityType {
   TASK_DONE
   DEAL_CREATED
 }
+
+model Campaign {
+  id         String              @id @default(cuid())
+  name       String
+  status     CampaignStatus      @default(DRAFT)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  recipients CampaignRecipient[]
+}
+
+enum CampaignStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+model CampaignRecipient {
+  id                String          @id @default(cuid())
+  campaignId        String
+  campaign          Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  instagramUsername String
+  messageText       String
+  status            RecipientStatus @default(PENDING)
+  sentAt            DateTime?
+  errorMessage      String?
+  createdAt         DateTime        @default(now())
+}
+
+enum RecipientStatus {
+  PENDING
+  SENDING
+  SENT
+  ERROR
+  NOT_FOUND
+  SKIPPED
+}
