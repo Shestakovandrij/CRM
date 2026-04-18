@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { Plus, AlertTriangle, Clock } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
-import { Badge } from "@/components/ui/badge";
 import { TaskForm } from "@/components/tasks/TaskForm";
 import { format, isPast } from "date-fns";
 import { uk } from "date-fns/locale";
@@ -19,147 +19,310 @@ interface Task {
   deal: { id: string; company: string | null } | null;
 }
 
-const STATUS_FILTERS = ["Всі", "TODO", "IN_PROGRESS", "DONE"];
+const COLUMNS = [
+  {
+    id: "TODO",
+    label: "To Do",
+    color: "#6b7280",
+    glow: "rgba(107,114,128,0.15)",
+    border: "rgba(107,114,128,0.25)",
+    bg: "rgba(107,114,128,0.04)",
+    dot: "#6b7280",
+  },
+  {
+    id: "IN_PROGRESS",
+    label: "In Progress",
+    color: "#22d3ee",
+    glow: "rgba(34,211,238,0.15)",
+    border: "rgba(34,211,238,0.25)",
+    bg: "rgba(34,211,238,0.04)",
+    dot: "#22d3ee",
+  },
+  {
+    id: "DONE",
+    label: "Виконано",
+    color: "#22c55e",
+    glow: "rgba(34,197,94,0.15)",
+    border: "rgba(34,197,94,0.25)",
+    bg: "rgba(34,197,94,0.04)",
+    dot: "#22c55e",
+  },
+];
+
+const PRIORITY_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  LOW:    { label: "Низький",    color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
+  MEDIUM: { label: "Середній",  color: "#C98C0A",  bg: "rgba(201,140,10,0.12)" },
+  HIGH:   { label: "Високий",   color: "#f97316",  bg: "rgba(249,115,22,0.12)" },
+  URGENT: { label: "Терміново", color: "#ef4444",  bg: "rgba(239,68,68,0.14)" },
+};
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Всі");
   const [showCreate, setShowCreate] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchTasks = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (statusFilter !== "Всі") params.set("status", statusFilter);
-    const res = await fetch(`/api/tasks?${params}`);
+    const res = await fetch("/api/tasks");
     const data: Task[] = await res.json();
-    const filtered = search
-      ? data.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
-      : data;
-    setTasks(filtered);
+    setTasks(data);
     setLoading(false);
-  }, [search, statusFilter]);
+  }, []);
 
   useEffect(() => {
-    const t = setTimeout(fetchTasks, 200);
-    return () => clearTimeout(t);
+    fetchTasks();
   }, [fetchTasks]);
 
-  async function createTask(data: Record<string, unknown>) {
-    await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-    setShowCreate(false);
-    fetchTasks();
-  }
+  async function onDragEnd(result: DropResult) {
+    if (!result.destination) return;
+    const taskId = result.draggableId;
+    const newStatus = result.destination.droppableId;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.status === newStatus) return;
 
-  async function toggleTask(task: Task) {
-    const next = task.status === "DONE" ? "TODO" : "DONE";
-    await fetch(`/api/tasks/${task.id}`, {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+    );
+    await fetch(`/api/tasks/${taskId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: next }),
+      body: JSON.stringify({ status: newStatus }),
     });
-    fetchTasks();
   }
 
-  async function deleteTask(id: string) {
+  async function createTask(data: Record<string, unknown>) {
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      setShowCreate(false);
+      fetchTasks();
+    }
+  }
+
+  async function deleteTask(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setTasks((prev) => prev.filter((t) => t.id !== id));
     await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-    fetchTasks();
   }
 
-  const overdue = tasks.filter((t) => t.status !== "DONE" && t.deadline && isPast(new Date(t.deadline)));
-  const rest = tasks.filter((t) => !(t.status !== "DONE" && t.deadline && isPast(new Date(t.deadline))));
+  const byStatus = (status: string) => tasks.filter((t) => t.status === status);
+  const totalDone = tasks.filter((t) => t.status === "DONE").length;
+  const totalOverdue = tasks.filter(
+    (t) => t.status !== "DONE" && t.deadline && isPast(new Date(t.deadline))
+  ).length;
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="p-6 h-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-lg font-semibold text-[var(--text)]">Tasks</h1>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">{tasks.length} задач</p>
+          <h1 className="text-lg font-semibold text-[var(--text)]">Задачі</h1>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+            {tasks.length} задач · {totalDone} виконано
+            {totalOverdue > 0 && (
+              <span style={{ color: "#ef4444" }}> · {totalOverdue} прострочено</span>
+            )}
+          </p>
         </div>
-        <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm rounded-lg transition-colors cursor-pointer">
-          <Plus size={15} />Нова задача
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-1.5 px-3 py-2 text-black text-sm rounded-lg transition-opacity hover:opacity-80 cursor-pointer font-semibold"
+          style={{ background: "var(--accent)" }}
+        >
+          <Plus size={15} /> Нова задача
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Пошук..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-sm focus:outline-none focus:border-[var(--accent)] transition-colors" />
-        </div>
-        <div className="flex gap-1">
-          {STATUS_FILTERS.map((s) => (
-            <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${statusFilter === s ? "bg-[var(--accent)] text-white" : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]"}`}>
-              {s === "IN_PROGRESS" ? "In Progress" : s}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {loading ? (
-        <div className="text-center py-12 text-[var(--text-muted)]">Завантаження...</div>
-      ) : (
-        <div className="space-y-4">
-          {overdue.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-[var(--danger)] uppercase tracking-wide mb-2">Прострочені</p>
-              <TaskList tasks={overdue} onToggle={toggleTask} onDelete={deleteTask} />
-            </div>
-          )}
-          {rest.length > 0 && (
-            <div>
-              {overdue.length > 0 && <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide mb-2">Інші</p>}
-              <TaskList tasks={rest} onToggle={toggleTask} onDelete={deleteTask} />
-            </div>
-          )}
-          {tasks.length === 0 && (
-            <div className="text-center py-12 text-[var(--text-muted)]">Задач немає</div>
-          )}
+        <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm">
+          Завантаження...
         </div>
+      ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="flex gap-4 flex-1 overflow-x-auto pb-2">
+            {COLUMNS.map((col) => {
+              const colTasks = byStatus(col.id);
+              return (
+                <div key={col.id} className="flex flex-col w-72 shrink-0">
+                  {/* Column header */}
+                  <div
+                    className="flex items-center justify-between mb-3 px-3 py-2.5 rounded-xl"
+                    style={{
+                      background: `linear-gradient(rgba(13,13,13,0.96), rgba(13,13,13,0.96)) padding-box, linear-gradient(135deg, ${col.border}, rgba(255,255,255,0.03)) border-box`,
+                      border: "1px solid transparent",
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          background: col.color,
+                          boxShadow: `0 0 6px ${col.color}`,
+                        }}
+                      />
+                      <span
+                        className="text-sm font-semibold"
+                        style={{ color: col.color }}
+                      >
+                        {col.label}
+                      </span>
+                    </div>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded-lg"
+                      style={{ color: col.color, background: col.glow }}
+                    >
+                      {colTasks.length}
+                    </span>
+                  </div>
+
+                  {/* Droppable column */}
+                  <Droppable droppableId={col.id}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="flex-1 rounded-xl p-2 space-y-2 min-h-[200px] transition-all duration-200"
+                        style={{
+                          background: snapshot.isDraggingOver
+                            ? col.glow
+                            : "rgba(16,16,16,0.5)",
+                          border: snapshot.isDraggingOver
+                            ? `1px solid ${col.border}`
+                            : "1px solid rgba(255,255,255,0.04)",
+                          boxShadow: snapshot.isDraggingOver
+                            ? `inset 0 0 30px ${col.glow}`
+                            : "none",
+                        }}
+                      >
+                        {colTasks.map((task, index) => {
+                          const isOverdue =
+                            task.status !== "DONE" &&
+                            task.deadline &&
+                            isPast(new Date(task.deadline));
+                          const pCfg = PRIORITY_CFG[task.priority] ?? PRIORITY_CFG.MEDIUM;
+
+                          return (
+                            <Draggable
+                              key={task.id}
+                              draggableId={task.id}
+                              index={index}
+                            >
+                              {(prov, snap) => (
+                                <div
+                                  ref={prov.innerRef}
+                                  {...prov.draggableProps}
+                                  {...prov.dragHandleProps}
+                                  className="rounded-xl p-3 group transition-all"
+                                  style={{
+                                    ...prov.draggableProps.style,
+                                    background:
+                                      "linear-gradient(rgba(20,20,20,0.97), rgba(20,20,20,0.97)) padding-box, linear-gradient(135deg, rgba(201,140,10,0.18), rgba(255,255,255,0.03) 50%, rgba(34,211,238,0.08)) border-box",
+                                    border: "1px solid transparent",
+                                    boxShadow: snap.isDragging
+                                      ? `0 8px 32px rgba(0,0,0,0.6), 0 0 20px ${col.glow}`
+                                      : "0 2px 8px rgba(0,0,0,0.3)",
+                                    transform: snap.isDragging
+                                      ? `${prov.draggableProps.style?.transform ?? ""} rotate(2deg)`
+                                      : prov.draggableProps.style?.transform,
+                                    opacity: task.status === "DONE" ? 0.65 : 1,
+                                  }}
+                                >
+                                  {/* Title */}
+                                  <p
+                                    className={`text-sm font-medium mb-2 ${
+                                      task.status === "DONE"
+                                        ? "line-through text-[var(--text-muted)]"
+                                        : "text-[var(--text)]"
+                                    }`}
+                                  >
+                                    {task.title}
+                                  </p>
+
+                                  {task.description && (
+                                    <p className="text-xs text-[var(--text-muted)] mb-2 line-clamp-2">
+                                      {task.description}
+                                    </p>
+                                  )}
+
+                                  {/* Tags row */}
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span
+                                      className="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                                      style={{ color: pCfg.color, background: pCfg.bg }}
+                                    >
+                                      {pCfg.label}
+                                    </span>
+
+                                    {task.deadline && (
+                                      <span
+                                        className="flex items-center gap-1 text-xs"
+                                        style={{
+                                          color: isOverdue ? "#ef4444" : "var(--text-muted)",
+                                        }}
+                                      >
+                                        {isOverdue ? (
+                                          <AlertTriangle size={10} />
+                                        ) : (
+                                          <Clock size={10} />
+                                        )}
+                                        {format(new Date(task.deadline), "d MMM", { locale: uk })}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Lead / Deal + Delete */}
+                                  <div className="flex items-center justify-between mt-2">
+                                    <div className="text-xs text-[var(--text-muted)] truncate flex-1">
+                                      {task.lead && (
+                                        <span className="flex items-center gap-1">
+                                          <span
+                                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                                            style={{ background: "var(--accent)" }}
+                                          />
+                                          {task.lead.name}
+                                        </span>
+                                      )}
+                                      {task.deal && (
+                                        <span className="flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#22d3ee]" />
+                                          {task.deal.company ?? "Угода"}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <button
+                                      onClick={(e) => deleteTask(task.id, e)}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-red-400 text-xs cursor-pointer shrink-0 ml-2"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+
+                        {colTasks.length === 0 && !snapshot.isDraggingOver && (
+                          <div className="flex items-center justify-center h-20 text-xs text-[var(--text-muted)] opacity-40">
+                            Перетягни сюди
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
       )}
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Нова задача" size="sm">
         <TaskForm onSave={createTask} onCancel={() => setShowCreate(false)} />
       </Modal>
-    </div>
-  );
-}
-
-function TaskList({ tasks, onToggle, onDelete }: { tasks: Task[]; onToggle: (t: Task) => void; onDelete: (id: string) => void }) {
-  return (
-    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl divide-y divide-[var(--border)]">
-      {tasks.map((task) => (
-        <div key={task.id} className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-2)] transition-colors">
-          <button
-            onClick={() => onToggle(task)}
-            className={`mt-0.5 shrink-0 w-4 h-4 rounded border cursor-pointer transition-colors ${
-              task.status === "DONE" ? "bg-[var(--success)] border-[var(--success)]" : "border-[var(--border)] hover:border-[var(--accent)]"
-            }`}
-          />
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm ${task.status === "DONE" ? "line-through text-[var(--text-muted)]" : "text-[var(--text)]"}`}>
-              {task.title}
-            </p>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              <Badge value={task.priority} />
-              <Badge value={task.status} />
-              {task.deadline && (
-                <span className={`text-xs ${task.status !== "DONE" && isPast(new Date(task.deadline)) ? "text-[var(--danger)]" : "text-[var(--text-muted)]"}`}>
-                  {format(new Date(task.deadline), "d MMM yyyy", { locale: uk })}
-                </span>
-              )}
-              {task.lead && <span className="text-xs text-[var(--text-muted)]">← {task.lead.name}</span>}
-              {task.deal && <span className="text-xs text-[var(--text-muted)]">← {task.deal.company ?? "Deal"}</span>}
-            </div>
-          </div>
-          <button onClick={() => onDelete(task.id)}
-            className="text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors cursor-pointer text-xs mt-0.5">
-            ×
-          </button>
-        </div>
-      ))}
     </div>
   );
 }

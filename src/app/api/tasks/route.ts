@@ -32,12 +32,21 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { title, description, deadline, status, priority, leadId, dealId } = body;
+  const { title, description, deadline, remindAt, status, priority, leadId, dealId } = body;
 
   if (!title?.trim()) return NextResponse.json({ error: "Title is required" }, { status: 400 });
 
   const task = await db.task.create({
-    data: { title, description, deadline, status, priority, leadId, dealId },
+    data: {
+      title,
+      description: description || null,
+      deadline: deadline ? new Date(deadline) : null,
+      remindAt: remindAt ? new Date(remindAt) : null,
+      status: status ?? "TODO",
+      priority: priority ?? "MEDIUM",
+      leadId: leadId || null,
+      dealId: dealId || null,
+    },
   });
 
   if (leadId) {

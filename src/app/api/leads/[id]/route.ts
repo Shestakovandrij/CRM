@@ -31,7 +31,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await db.lead.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const lead = await db.lead.update({ where: { id }, data: body });
+  const updateData = { ...body };
+  if (updateData.instagram) updateData.instagram = updateData.instagram.replace(/^@/, "").trim();
+  if (updateData.telegram) updateData.telegram = updateData.telegram.replace(/^@/, "").trim();
+  if (updateData.amount !== undefined) updateData.amount = updateData.amount ? parseFloat(updateData.amount) : null;
+
+  const lead = await db.lead.update({ where: { id }, data: updateData });
 
   if (body.status && body.status !== existing.status) {
     await db.activity.create({

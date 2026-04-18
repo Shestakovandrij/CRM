@@ -12,7 +12,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await db.task.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const task = await db.task.update({ where: { id }, data: body });
+  const updateData = { ...body };
+  if (updateData.deadline !== undefined) {
+    updateData.deadline = updateData.deadline ? new Date(updateData.deadline) : null;
+  }
+  if (updateData.remindAt !== undefined) {
+    updateData.remindAt = updateData.remindAt ? new Date(updateData.remindAt) : null;
+  }
+  const task = await db.task.update({ where: { id }, data: updateData });
 
   if (body.status === "DONE" && existing.status !== "DONE") {
     const ref = existing.leadId ?? existing.dealId;

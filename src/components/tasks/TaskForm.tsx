@@ -11,6 +11,7 @@ export function TaskForm({ onSave, onCancel }: TaskFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [remindAt, setRemindAt] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [saving, setSaving] = useState(false);
 
@@ -18,7 +19,7 @@ export function TaskForm({ onSave, onCancel }: TaskFormProps) {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave({ title, description, deadline: deadline || null, priority, status: "TODO" });
+      await onSave({ title, description, deadline: deadline || null, remindAt: remindAt || null, priority, status: "TODO" });
     } finally {
       setSaving(false);
     }
@@ -56,11 +57,27 @@ export function TaskForm({ onSave, onCancel }: TaskFormProps) {
             value={priority} onChange={(e) => setPriority(e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)] text-sm focus:outline-none focus:border-[var(--accent)] transition-colors cursor-pointer"
           >
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
+            <option value="LOW">Низький</option>
+            <option value="MEDIUM">Середній</option>
+            <option value="HIGH">Високий</option>
+            <option value="URGENT">Терміново</option>
           </select>
         </div>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs flex items-center gap-1" style={{ color: "#4285F4" }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          Нагадування в Telegram
+        </label>
+        <input
+          type="datetime-local"
+          value={remindAt}
+          onChange={(e) => setRemindAt(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border text-[var(--text)] text-sm focus:outline-none transition-colors"
+          style={{ borderColor: remindAt ? "rgba(66,133,244,0.5)" : "var(--border)" }}
+        />
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer">

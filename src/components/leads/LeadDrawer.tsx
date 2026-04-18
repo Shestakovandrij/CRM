@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X, AtSign, Phone, Mail, Plus, CheckSquare, Clock, MessageSquare, AlertCircle, Briefcase } from "lucide-react";
+import { X, Phone, Mail, Plus, CheckSquare, Clock, MessageSquare, AlertCircle, Briefcase, MapPin, Tag, DollarSign, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { TaskForm } from "@/components/tasks/TaskForm";
@@ -34,11 +34,17 @@ interface LeadDetail {
   id: string;
   name: string;
   instagram: string | null;
+  telegram: string | null;
   phone: string | null;
   email: string | null;
   comment: string | null;
   source: string | null;
+  geo: string | null;
+  niche: string | null;
+  amount: number | null;
   status: string;
+  remindAt: string | null;
+  remindSent: boolean;
   createdAt: string;
   tasks: Task[];
   activities: Activity[];
@@ -66,13 +72,31 @@ export default function LeadDrawer({
 }) {
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [note, setNote] = useState("");
+  const [remindAt, setRemindAt] = useState("");
+  const [savingRemind, setSavingRemind] = useState(false);
   const [showTask, setShowTask] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchLead = useCallback(async () => {
     const res = await fetch(`/api/leads/${leadId}`);
-    setLead(await res.json());
+    const data: LeadDetail = await res.json();
+    setLead(data);
+    if (data.remindAt) {
+      setRemindAt(data.remindAt.slice(0, 16));
+    }
   }, [leadId]);
+
+  async function saveRemind() {
+    if (!remindAt) return;
+    setSavingRemind(true);
+    await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ remindAt: new Date(remindAt).toISOString(), remindSent: false }),
+    });
+    setSavingRemind(false);
+    fetchLead();
+  }
 
   useEffect(() => { fetchLead(); }, [fetchLead]);
 
@@ -128,8 +152,8 @@ export default function LeadDrawer({
   if (!lead) {
     return (
       <div className="fixed inset-0 z-40 flex">
-        <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-        <div className="ml-auto w-full max-w-xl bg-[var(--surface)] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40 z-0" onClick={onClose} />
+        <div className="relative z-10 ml-auto w-full max-w-xl bg-[var(--surface)] flex items-center justify-center">
           <span className="text-[var(--text-muted)] text-sm">Завантаження...</span>
         </div>
       </div>
@@ -139,8 +163,8 @@ export default function LeadDrawer({
   return (
     <>
       <div className="fixed inset-0 z-40 flex">
-        <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-        <div className="ml-auto w-full max-w-xl bg-[var(--surface)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-black/40 z-0" onClick={onClose} />
+        <div className="relative z-10 ml-auto w-full max-w-xl bg-[var(--surface)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden shadow-2xl">
           {/* Header */}
           <div className="flex items-start justify-between px-5 py-4 border-b border-[var(--border)]">
             <div>
@@ -149,18 +173,59 @@ export default function LeadDrawer({
                 Створено {formatDistanceToNow(new Date(lead.createdAt), { addSuffix: true, locale: uk })}
               </p>
             </div>
-            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer">
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Зустріч з ${lead.name}`)}&details=${encodeURIComponent(`CRM Lead: ${lead.name}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Створити Google Meet"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80 cursor-pointer"
+                style={{
+                  background: "rgba(66,133,244,0.12)",
+                  border: "1px solid rgba(66,133,244,0.25)",
+                  color: "#4285F4",
+                }}
+              >
+                <Video size={13} />
+                Meet
+              </a>
+              <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             {/* Info */}
             <div className="space-y-2">
+              {/* Social links */}
               {lead.instagram && (
-                <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-                  <AtSign size={14} /><span>{lead.instagram}</span>
-                </div>
+                <a
+                  href={`https://instagram.com/${lead.instagram}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm hover:opacity-75 transition-opacity"
+                  style={{ color: "#E4405F" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                  @{lead.instagram}
+                </a>
+              )}
+              {lead.telegram && (
+                <a
+                  href={`https://t.me/${lead.telegram}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm hover:opacity-75 transition-opacity"
+                  style={{ color: "#26A5E4" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  </svg>
+                  @{lead.telegram}
+                </a>
               )}
               {lead.phone && (
                 <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
@@ -172,6 +237,29 @@ export default function LeadDrawer({
                   <Mail size={14} /><span>{lead.email}</span>
                 </div>
               )}
+              {/* Meta info */}
+              <div className="flex flex-wrap gap-3 pt-1">
+                {lead.source && (
+                  <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                    <Tag size={11} />{lead.source}
+                  </span>
+                )}
+                {lead.geo && (
+                  <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                    <MapPin size={11} />{lead.geo}
+                  </span>
+                )}
+                {lead.niche && (
+                  <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                    {lead.niche}
+                  </span>
+                )}
+                {lead.amount && (
+                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                    <DollarSign size={11} />{lead.amount.toLocaleString()}
+                  </span>
+                )}
+              </div>
               {lead.comment && (
                 <p className="text-sm text-[var(--text)] bg-[var(--surface-2)] px-3 py-2 rounded-lg">
                   {lead.comment}
@@ -280,6 +368,43 @@ export default function LeadDrawer({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Remind */}
+          <div
+            className="px-5 py-3"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}
+          >
+            <p className="text-xs mb-1.5 flex items-center gap-1" style={{ color: "#4285F4" }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              Нагадування в Telegram
+              {lead.remindAt && lead.remindSent && (
+                <span className="text-[#22c55e] text-xs ml-1">· відправлено</span>
+              )}
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="datetime-local"
+                value={remindAt}
+                onChange={(e) => setRemindAt(e.target.value)}
+                className="flex-1 px-3 py-1.5 rounded-lg text-sm focus:outline-none transition-colors"
+                style={{
+                  background: "var(--surface-2)",
+                  border: remindAt ? "1px solid rgba(66,133,244,0.5)" : "1px solid var(--border)",
+                  color: "var(--text)",
+                }}
+              />
+              <button
+                onClick={saveRemind}
+                disabled={!remindAt || savingRemind}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-40 cursor-pointer"
+                style={{ background: "rgba(66,133,244,0.15)", border: "1px solid rgba(66,133,244,0.3)", color: "#4285F4" }}
+              >
+                {savingRemind ? "..." : "Зберегти"}
+              </button>
             </div>
           </div>
 
