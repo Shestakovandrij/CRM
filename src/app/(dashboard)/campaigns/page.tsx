@@ -21,20 +21,20 @@ interface Campaign {
 }
 
 const statusConfig: Record<CampaignStatus, { label: string; cls: string }> = {
-  DRAFT: { label: "Чернетка", cls: "text-[var(--text-muted)] bg-[var(--surface-2)]" },
-  RUNNING: { label: "Запущено", cls: "text-emerald-400 bg-emerald-400/10" },
-  PAUSED: { label: "Пауза", cls: "text-yellow-400 bg-yellow-400/10" },
+  DRAFT:     { label: "Чернетка", cls: "text-[var(--text-muted)] bg-[var(--surface-2)]" },
+  RUNNING:   { label: "Запущено",  cls: "text-emerald-400 bg-emerald-400/10" },
+  PAUSED:    { label: "Пауза",     cls: "text-yellow-400 bg-yellow-400/10" },
   COMPLETED: { label: "Завершено", cls: "text-blue-400 bg-blue-400/10" },
 };
 
 function CampaignStats({ recipients }: { recipients: { status: RecipientStatus }[] }) {
-  const total = recipients.length;
-  const sent = recipients.filter((r) => r.status === "SENT").length;
-  const errors = recipients.filter((r) => r.status === "ERROR" || r.status === "NOT_FOUND").length;
+  const sent    = recipients.filter((r) => r.status === "SENT").length;
+  const errors  = recipients.filter((r) => r.status === "ERROR" || r.status === "NOT_FOUND").length;
   const pending = recipients.filter((r) => r.status === "PENDING" || r.status === "SENDING").length;
+  const total   = recipients.length;
 
   return (
-    <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+    <div className="flex items-center flex-wrap gap-3 text-xs text-[var(--text-muted)]">
       <span className="flex items-center gap-1">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
         {sent} надіслано
@@ -49,7 +49,7 @@ function CampaignStats({ recipients }: { recipients: { status: RecipientStatus }
         <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] inline-block" />
         {pending} в черзі
       </span>
-      <span className="text-[var(--border)]">/ {total} всього</span>
+      <span className="text-[var(--border)]">/ {total}</span>
     </div>
   );
 }
@@ -103,23 +103,26 @@ export default function CampaignsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border)]">
+      {/* Page header */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text)]">Instagram розсилки</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">
-            Керуйте кампаніями через Telegram-бота
+          <h1 className="text-lg sm:text-xl font-semibold text-[var(--text)]">Instagram розсилки</h1>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
+            Запускайте кампанії прямо з CRM
           </p>
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-[var(--accent)] text-black text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
         >
           <Plus size={16} />
-          Нова кампанія
+          <span className="hidden sm:inline">Нова кампанія</span>
+          <span className="sm:hidden">Нова</span>
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
+        {/* Create form */}
         {creating && (
           <form
             onSubmit={handleCreate}
@@ -135,7 +138,7 @@ export default function CampaignsPage() {
             <button
               type="submit"
               disabled={!newName.trim() || createMut.isPending}
-              className="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-medium disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-black text-xs font-semibold disabled:opacity-50"
             >
               Створити
             </button>
@@ -144,7 +147,7 @@ export default function CampaignsPage() {
               onClick={() => setCreating(false)}
               className="px-3 py-1.5 rounded-lg text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
             >
-              Скасувати
+              ✕
             </button>
           </form>
         )}
@@ -169,13 +172,14 @@ export default function CampaignsPage() {
               return (
                 <div
                   key={c.id}
-                  className="group flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/40 transition-colors cursor-pointer"
+                  className="flex items-start sm:items-center gap-3 sm:gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/40 transition-colors cursor-pointer active:scale-[0.99]"
                   onClick={() => router.push(`/campaigns/${c.id}`)}
                 >
+                  {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-sm font-medium text-[var(--text)] truncate">{c.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.cls}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${cfg.cls}`}>
                         {cfg.label}
                       </span>
                     </div>
@@ -192,44 +196,44 @@ export default function CampaignsPage() {
                     ) : (
                       <p className="text-xs text-[var(--text-muted)]">Отримувачів ще немає</p>
                     )}
+                    <div className="flex items-center gap-1 text-xs text-[var(--text-dim)] mt-1.5">
+                      <Clock size={11} />
+                      {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                    <Clock size={12} />
-                    {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}
-                  </div>
-
+                  {/* Action buttons — always visible on mobile, hover on desktop */}
                   <div
-                    className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 opacity-100 shrink-0"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {c.status === "DRAFT" || c.status === "PAUSED" ? (
                       <button
                         title="Запустити"
                         onClick={() => statusMut.mutate({ id: c.id, status: "RUNNING" })}
-                        className="p-1.5 rounded-lg hover:bg-emerald-400/10 text-emerald-400 transition-colors"
+                        className="p-2 rounded-xl hover:bg-emerald-400/10 text-emerald-400 transition-colors active:scale-90"
                       >
-                        <Play size={14} />
+                        <Play size={16} />
                       </button>
                     ) : c.status === "RUNNING" ? (
                       <button
                         title="Пауза"
                         onClick={() => statusMut.mutate({ id: c.id, status: "PAUSED" })}
-                        className="p-1.5 rounded-lg hover:bg-yellow-400/10 text-yellow-400 transition-colors"
+                        className="p-2 rounded-xl hover:bg-yellow-400/10 text-yellow-400 transition-colors active:scale-90"
                       >
-                        <Pause size={14} />
+                        <Pause size={16} />
                       </button>
                     ) : (
-                      <CheckCircle2 size={14} className="text-blue-400 mx-1.5" />
+                      <CheckCircle2 size={16} className="text-blue-400 mx-1.5" />
                     )}
                     <button
                       title="Видалити"
                       onClick={() => {
                         if (confirm("Видалити кампанію?")) deleteMut.mutate(c.id);
                       }}
-                      className="p-1.5 rounded-lg hover:bg-red-400/10 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                      className="p-2 rounded-xl hover:bg-red-400/10 text-[var(--text-muted)] hover:text-red-400 transition-colors active:scale-90"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Search, Bell } from "lucide-react";
-import { useState } from "react";
+import { Search, Bell, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useMobileMenu } from "@/lib/useMobileMenu";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -16,6 +17,18 @@ const pageTitles: Record<string, string> = {
 export default function Header() {
   const path = usePathname();
   const [search, setSearch] = useState("");
+  const [time, setTime] = useState("");
+  const { toggle } = useMobileMenu();
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const title = Object.entries(pageTitles)
     .sort((a, b) => b[0].length - a[0].length)
@@ -23,99 +36,145 @@ export default function Header() {
 
   const segments = title === "Dashboard" ? ["Dashboard"] : ["Dashboard", title];
 
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
   return (
     <header
-      className="flex items-center gap-4 px-6 py-3 shrink-0 relative z-10"
       style={{
-        background: "rgba(3, 9, 5, 0.80)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(0,229,160,0.07)",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 16px",
+        flexShrink: 0,
+        position: "relative",
+        zIndex: 10,
+        background: "rgba(6, 6, 6, 0.88)",
+        backdropFilter: "blur(24px) saturate(160%)",
+        WebkitBackdropFilter: "blur(24px) saturate(160%)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset",
       }}
     >
+      {/* Hamburger — CSS клас ховає на desktop */}
+      <button
+        onClick={toggle}
+        className="hamburger-btn"
+        aria-label="Відкрити меню"
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          color: "var(--text-muted)",
+          cursor: "pointer",
+          flexShrink: 0,
+        }}
+      >
+        <Menu size={18} />
+      </button>
+
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm min-w-0 shrink-0">
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, flexShrink: 0 }}>
         {segments.map((seg, i) => (
-          <span key={seg} className="flex items-center gap-1.5">
-            {i > 0 && <span className="text-[var(--text-dim)]">/</span>}
-            <span
-              className={
-                i === segments.length - 1
-                  ? "font-semibold text-[var(--text)]"
-                  : "text-[var(--text-muted)]"
-              }
-            >
+          <span key={seg} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {i > 0 && <span style={{ color: "var(--text-dim)" }}>/</span>}
+            <span style={{ fontWeight: i === segments.length - 1 ? 600 : 400, color: i === segments.length - 1 ? "var(--text)" : "var(--text-muted)" }}>
               {seg}
             </span>
           </span>
         ))}
       </div>
 
-      {/* Search */}
-      <div className="flex-1 max-w-sm relative">
+      {/* Search — прихований на дуже малих екранах через flex shrink */}
+      <div style={{ flex: 1, maxWidth: 280, position: "relative" }}>
         <Search
           size={13}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+          style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}
         />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search..."
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-xl text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none transition-all duration-200"
           style={{
-            background: "rgba(0,229,160,0.04)",
-            border: "1px solid rgba(0,229,160,0.08)",
+            width: "100%",
+            padding: "6px 16px 6px 36px",
+            fontSize: 13,
+            borderRadius: 10,
+            color: "var(--text)",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            outline: "none",
           }}
           onFocus={(e) => {
-            e.currentTarget.style.borderColor = "rgba(0,229,160,0.30)";
-            e.currentTarget.style.background = "rgba(0,229,160,0.07)";
+            e.currentTarget.style.borderColor = "rgba(201,140,10,0.40)";
+            e.currentTarget.style.background = "rgba(201,140,10,0.05)";
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(0,229,160,0.08)";
-            e.currentTarget.style.background = "rgba(0,229,160,0.04)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
           }}
         />
       </div>
 
-      <div className="flex items-center gap-2.5 ml-auto">
-        {/* Notification bell */}
+      {/* Clock — прихований через CSS на мобільному */}
+      <div className="header-clock" style={{ fontSize: 13, fontFamily: "monospace", fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+        {time}
+      </div>
+
+      {/* Date — прихований через CSS на мобільному */}
+      <div className="header-date" style={{ fontSize: 11, fontWeight: 500, color: "var(--accent)", whiteSpace: "nowrap" }}>
+        {dateStr}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+        {/* Bell */}
         <button
-          className="relative w-8 h-8 flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
           style={{
-            background: "rgba(0,229,160,0.05)",
-            border: "1px solid rgba(0,229,160,0.09)",
+            position: "relative",
+            width: 36, height: 36,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            color: "var(--text-muted)",
+            cursor: "pointer",
           }}
         >
           <Bell size={14} />
           <span
-            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
             style={{
+              position: "absolute", top: 6, right: 6,
+              width: 6, height: 6, borderRadius: "50%",
               background: "var(--accent)",
               boxShadow: "0 0 6px var(--accent-glow)",
             }}
           />
         </button>
 
-        {/* Divider */}
-        <div
-          className="h-5 w-px"
-          style={{ background: "rgba(0,229,160,0.10)" }}
-        />
-
         {/* Avatar */}
-        <div className="flex items-center gap-2.5 cursor-pointer group">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs font-medium text-[var(--text)]">Admin</p>
-            <p className="text-[10px] text-[var(--text-muted)]">CRM SHSTKV</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <div
+            className="header-user-name"
+            style={{ textAlign: "right" }}
+          >
+            <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>Admin</p>
+            <p style={{ fontSize: 10, color: "var(--text-muted)" }}>SHSTKV CRM</p>
           </div>
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-black shrink-0 transition-all duration-200"
             style={{
-              background: "linear-gradient(135deg, #00e5a0, #00c070)",
-              boxShadow: "0 0 14px rgba(0,229,160,0.40)",
+              width: 36, height: 36, borderRadius: 10,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 12, fontWeight: 700, color: "#000", flexShrink: 0,
+              background: "var(--accent)",
+              boxShadow: "0 0 14px var(--accent-glow)",
             }}
           >
-            A
+            S
           </div>
         </div>
       </div>

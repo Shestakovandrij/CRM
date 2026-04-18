@@ -2,31 +2,32 @@
 
 :root {
   /* ── Core Palette ── */
-  --background:  #040d08;
-  --surface:     rgba(10, 24, 15, 0.90);
-  --surface-2:   rgba(16, 36, 22, 0.85);
-  --surface-3:   rgba(20, 46, 28, 0.80);
+  --background:  #080808;
+  --surface:     rgba(16, 16, 16, 0.94);
+  --surface-2:   rgba(22, 22, 22, 0.90);
+  --surface-3:   rgba(28, 28, 28, 0.88);
 
   /* ── Borders ── */
-  --border:       rgba(0, 229, 160, 0.08);
-  --border-light: rgba(0, 229, 160, 0.16);
+  --border:       rgba(255, 255, 255, 0.06);
+  --border-light: rgba(255, 255, 255, 0.12);
 
   /* ── Text ── */
-  --text:       #e8f5ef;
-  --text-muted: #4a7a62;
-  --text-dim:   #2d5240;
+  --text:       #f0f0f0;
+  --text-muted: #888888;
+  --text-dim:   #444444;
 
-  /* ── Accent (neon mint) ── */
-  --accent:      #00e5a0;
-  --accent-hover: #00c988;
-  --accent-glow:  rgba(0, 229, 160, 0.35);
-  --accent-subtle: rgba(0, 229, 160, 0.10);
+  /* ── Accent (golden) ── */
+  --accent:        #C98C0A;
+  --accent-hover:  #b57d09;
+  --accent-glow:   rgba(201, 140, 10, 0.35);
+  --accent-subtle: rgba(201, 140, 10, 0.10);
+  --accent-dark:   #9a6b08;
 
   /* ── Status colors ── */
   --cyan:    #22d3ee;
   --violet:  #a78bfa;
   --orange:  #fb923c;
-  --success: #00e5a0;
+  --success: #C98C0A;
   --warning: #fbbf24;
   --danger:  #f87171;
 }
@@ -47,51 +48,284 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Background mesh texture ── */
-body::before {
+/* ── Circuit grid background ── */
+.circuit-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+    radial-gradient(circle, rgba(201,140,10,0.18) 1.2px, transparent 1.2px);
+  background-size: 60px 60px, 60px 60px, 60px 60px;
+  background-position: 0 0, 0 0, 30px 30px;
+  mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 40%, transparent 100%);
+}
+
+/* ── Scanlines ── */
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+}
+
+/* ── Aurora beam animations ── */
+@keyframes aurora-drift-1 {
+  0%   { transform: rotate(-15deg) translateX(0); opacity: 0.8; }
+  50%  { transform: rotate(-12deg) translateX(3vw); opacity: 1; }
+  100% { transform: rotate(-15deg) translateX(0); opacity: 0.8; }
+}
+
+@keyframes aurora-drift-2 {
+  0%   { transform: rotate(10deg) translateX(0); opacity: 0.7; }
+  50%  { transform: rotate(8deg) translateX(-3vw); opacity: 1; }
+  100% { transform: rotate(10deg) translateX(0); opacity: 0.7; }
+}
+
+@keyframes pulse-glow {
+  0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50%  { opacity: 1;   transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes pulse-glow-2 {
+  0%   { opacity: 0.5; transform: scale(1); }
+  50%  { opacity: 0.9; transform: scale(1.2); }
+  100% { opacity: 0.5; transform: scale(1); }
+}
+
+.aurora-beam-1 {
+  animation: aurora-drift-1 12s ease-in-out infinite;
+}
+
+.aurora-beam-2 {
+  animation: aurora-drift-2 16s ease-in-out infinite;
+}
+
+.pulse-node {
+  animation: pulse-glow 8s ease-in-out infinite;
+}
+
+.pulse-node-2 {
+  animation: pulse-glow-2 10s ease-in-out infinite;
+}
+
+.pulse-node-3 {
+  animation: pulse-glow-2 13s ease-in-out infinite 2s;
+}
+
+/* ── Subtle accent corner glow ── */
+body::after {
   content: "";
   position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(0,229,160,0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(0,180,120,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(0,100,60,0.03) 0%, transparent 70%);
+  top: -100px;
+  right: -60px;
+  width: 440px;
+  height: 360px;
+  background: radial-gradient(ellipse, rgba(201,140,10,0.08) 0%, transparent 65%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── Glass card ── */
+/* ──────────────────────────────────
+   GLASSMORPHISM — Enhanced
+────────────────────────────────── */
+
 .glass-card {
-  background: rgba(10, 24, 15, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 229, 160, 0.10);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.01) 100%
+    ),
+    rgba(12, 12, 12, 0.88);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 4px 40px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(0, 229, 160, 0.06);
+    0 4px 40px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.40) inset;
   border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top shimmer highlight */
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 30%,
+    rgba(201, 140, 10, 0.20) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .glass-card:hover {
-  border-color: rgba(0, 229, 160, 0.20);
+  border-color: rgba(255, 255, 255, 0.13);
   box-shadow:
-    0 8px 48px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(0, 229, 160, 0.08),
-    inset 0 1px 0 rgba(0, 229, 160, 0.08);
-  transition: border-color 0.2s, box-shadow 0.2s;
+    0 8px 52px rgba(0, 0, 0, 0.70),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 0 0 1px rgba(201, 140, 10, 0.08) inset;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+/* ── Accent-tinted glass variant ── */
+.glass-card-accent {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(201, 140, 10, 0.07) 0%,
+      rgba(201, 140, 10, 0.02) 100%
+    ),
+    rgba(12, 12, 12, 0.90);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(201, 140, 10, 0.18);
+  box-shadow:
+    0 4px 40px rgba(0, 0, 0, 0.60),
+    0 0 20px rgba(201, 140, 10, 0.06) inset,
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  border-radius: 16px;
 }
 
 /* ── Neon accent glow ── */
 .neon-glow {
-  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 229, 160, 0.15);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(201, 140, 10, 0.12);
 }
 
 .text-glow {
   text-shadow: 0 0 16px var(--accent-glow);
 }
 
+/* ── Gradient border trick ── */
+.gradient-border {
+  position: relative;
+  border-radius: 16px;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(201, 140, 10, 0.30) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(124, 58, 237, 0.15) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0, 229, 160, 0.15); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0, 229, 160, 0.28); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201, 140, 10, 0.30); }
+
+/* ══════════════════════════════════
+   RESPONSIVE LAYOUT — explicit media queries
+   (не покладаємось на Tailwind scanning)
+══════════════════════════════════ */
+
+/* Desktop sidebar — фіксований, прихований на мобільному */
+.sidebar-desktop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 208px;
+  z-index: 10;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+@media (min-width: 1024px) {
+  .sidebar-desktop { display: flex; }
+}
+
+/* Mobile drawer — поверх контенту, керується JS transform */
+.sidebar-mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 260px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (min-width: 1024px) {
+  .sidebar-mobile-drawer { display: none !important; }
+}
+
+/* Mobile overlay backdrop */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 40;
+  animation: fade-in 0.2s ease;
+}
+@media (min-width: 1024px) {
+  .sidebar-overlay { display: none !important; }
+}
+
+/* Hamburger кнопка — лише мобільний */
+.hamburger-btn {
+  display: flex;
+}
+@media (min-width: 1024px) {
+  .hamburger-btn { display: none !important; }
+}
+
+/* Основний контент — відступ для desktop sidebar */
+.dashboard-content {
+  margin-left: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .dashboard-content { margin-left: 208px; }
+}
+
+/* Header responsive елементи */
+.header-clock,
+.header-date,
+.header-user-name {
+  display: none;
+}
+@media (min-width: 768px) {
+  .header-clock { display: block; }
+}
+@media (min-width: 1024px) {
+  .header-date { display: block; }
+  .header-user-name { display: block; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

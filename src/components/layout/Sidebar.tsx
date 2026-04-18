@@ -4,103 +4,93 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  LayoutDashboard,
-  Users,
-  Briefcase,
-  CheckSquare,
-  Kanban,
-  Send,
-  LogOut,
-  Zap,
+  LayoutDashboard, Users, Briefcase, CheckSquare,
+  Kanban, Send, LogOut, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMobileMenu } from "@/lib/useMobileMenu";
 
 const nav = [
-  { href: "/", icon: LayoutDashboard, label: "Overview" },
-  { href: "/leads", icon: Users, label: "Leads" },
-  { href: "/pipeline", icon: Kanban, label: "Pipeline" },
-  { href: "/clients", icon: Briefcase, label: "Clients" },
-  { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-  { href: "/campaigns", icon: Send, label: "Campaigns" },
+  { href: "/",          icon: LayoutDashboard, label: "Overview" },
+  { href: "/leads",     icon: Users,           label: "Leads" },
+  { href: "/pipeline",  icon: Kanban,          label: "Pipeline" },
+  { href: "/clients",   icon: Briefcase,       label: "Clients" },
+  { href: "/tasks",     icon: CheckSquare,     label: "Tasks" },
+  { href: "/campaigns", icon: Send,            label: "Campaigns" },
 ];
 
-export default function Sidebar() {
+const glassStyle: React.CSSProperties = {
+  background: "rgba(6, 6, 6, 0.98)",
+  backdropFilter: "blur(28px) saturate(180%)",
+  WebkitBackdropFilter: "blur(28px) saturate(180%)",
+  borderRight: "1px solid rgba(255,255,255,0.07)",
+  boxShadow: "4px 0 40px rgba(0,0,0,0.5), 1px 0 0 rgba(255,255,255,0.04) inset",
+};
+
+function NavContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const path = usePathname();
 
   return (
-    <aside
-      className="w-56 shrink-0 flex flex-col h-full relative z-10"
-      style={{
-        background: "rgba(3, 9, 5, 0.96)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        borderRight: "1px solid rgba(0,229,160,0.08)",
-      }}
-    >
+    <>
       {/* Logo */}
-      <div className="px-5 pt-6 pb-5 flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-          style={{
-            background: "linear-gradient(135deg, #00e5a0, #00c070)",
-            boxShadow: "0 0 20px rgba(0,229,160,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
-          }}
-        >
-          <Zap size={15} className="text-black" strokeWidth={2.5} />
+      <div style={{ padding: "24px 20px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 28, flexShrink: 0 }}>
+          {[10, 18, 14, 22, 16, 20, 12].map((h, i) => (
+            <div
+              key={i}
+              style={{
+                width: 3, height: h,
+                borderRadius: 999,
+                background: "var(--accent)",
+                boxShadow: "0 0 6px var(--accent-glow)",
+              }}
+            />
+          ))}
         </div>
         <div>
-          <span className="text-sm font-bold text-[var(--text)] tracking-wide">CRM</span>
-          <span
-            className="text-xs block font-medium"
-            style={{ color: "var(--accent)", lineHeight: 1 }}
-          >
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
             SHSTKV
+          </span>
+          <span style={{ fontSize: 9, display: "block", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--text-dim)", lineHeight: 1.2 }}>
+            CRM
           </span>
         </div>
       </div>
 
-      {/* Section label */}
-      <div className="px-5 mb-2">
-        <span className="text-[10px] font-semibold tracking-widest text-[var(--text-dim)] uppercase">
+      {/* Menu label */}
+      <div style={{ padding: "0 20px 6px" }}>
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--text-dim)" }}>
           Menu
         </span>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+      {/* Nav links */}
+      <nav style={{ flex: 1, padding: "0 10px", overflowY: "auto" }}>
         {nav.map(({ href, icon: Icon, label }) => {
           const active = href === "/" ? path === "/" : path.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer",
-                active
-                  ? "text-[var(--accent)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.03]"
-              )}
-              style={
-                active
-                  ? {
-                      background: "rgba(0,229,160,0.10)",
-                      boxShadow: "inset 0 0 24px rgba(0,229,160,0.05)",
-                      border: "1px solid rgba(0,229,160,0.14)",
-                    }
-                  : { border: "1px solid transparent" }
-              }
+              onClick={onLinkClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 12px",
+                borderRadius: 12,
+                marginBottom: 2,
+                fontSize: 14,
+                fontWeight: 500,
+                textDecoration: "none",
+                transition: "all 0.15s",
+                ...(active
+                  ? { background: "var(--accent)", color: "#000", boxShadow: "0 0 16px var(--accent-glow)" }
+                  : { color: "var(--text-muted)" }
+                ),
+              }}
             >
-              <Icon
-                size={16}
-                style={
-                  active
-                    ? {
-                        color: "var(--accent)",
-                        filter: "drop-shadow(0 0 6px rgba(0,229,160,0.6))",
-                      }
-                    : {}
-                }
-              />
+              <Icon size={15} />
               {label}
             </Link>
           );
@@ -108,19 +98,69 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div
-        className="px-3 py-4 mt-auto"
-        style={{ borderTop: "1px solid rgba(0,229,160,0.06)" }}
-      >
+      <div style={{ padding: "16px 10px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "auto" }}>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-red-500/[0.06] transition-all duration-150 cursor-pointer"
-          style={{ border: "1px solid transparent" }}
+          style={{
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "10px 12px", width: "100%", borderRadius: 12,
+            fontSize: 14, fontWeight: 500, background: "none", border: "none",
+            color: "var(--text-muted)", cursor: "pointer", transition: "all 0.15s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           Log out
         </button>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export default function Sidebar() {
+  const { isOpen, close } = useMobileMenu();
+
+  return (
+    <>
+      {/* Desktop sidebar — CSS class показує лише на lg+ */}
+      <aside className="sidebar-desktop" style={glassStyle}>
+        <NavContent />
+      </aside>
+
+      {/* Mobile overlay — CSS class показує лише на mobile */}
+      {isOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={close}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile drawer — CSS class ховає на desktop, JS керує transform */}
+      <aside
+        className="sidebar-mobile-drawer"
+        style={{
+          ...glassStyle,
+          transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+        }}
+      >
+        {/* Close button */}
+        <button
+          onClick={close}
+          style={{
+            position: "absolute", top: 16, right: 16,
+            width: 28, height: 28, borderRadius: 8,
+            background: "rgba(255,255,255,0.06)", border: "none",
+            color: "var(--text-muted)", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <X size={16} />
+        </button>
+
+        <NavContent onLinkClick={close} />
+      </aside>
+    </>
   );
 }
