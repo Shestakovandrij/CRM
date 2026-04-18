@@ -13,13 +13,14 @@ export function TaskForm({ onSave, onCancel }: TaskFormProps) {
   const [deadline, setDeadline] = useState("");
   const [remindAt, setRemindAt] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
+  const [assignee, setAssignee] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave({ title, description, deadline: deadline || null, remindAt: remindAt || null, priority, status: "TODO" });
+      await onSave({ title, description, deadline: deadline || null, remindAt: remindAt || null, priority, status: "TODO", assignee: assignee || null });
     } finally {
       setSaving(false);
     }
@@ -62,6 +63,26 @@ export function TaskForm({ onSave, onCancel }: TaskFormProps) {
             <option value="HIGH">Високий</option>
             <option value="URGENT">Терміново</option>
           </select>
+        </div>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-[var(--text-muted)]">Відповідальний</label>
+        <div className="flex gap-2">
+          {["Андрій", "Лідусик"].map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setAssignee(assignee === name ? "" : name)}
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+              style={{
+                background: assignee === name ? "var(--accent)" : "var(--surface-2)",
+                color: assignee === name ? "#000" : "var(--text-muted)",
+                border: `1px solid ${assignee === name ? "var(--accent)" : "var(--border)"}`,
+              }}
+            >
+              {name}
+            </button>
+          ))}
         </div>
       </div>
       <div className="space-y-1">

@@ -15,6 +15,7 @@ interface Task {
   deadline: string | null;
   status: string;
   priority: string;
+  assignee: string | null;
   lead: { id: string; name: string } | null;
   deal: { id: string; company: string | null } | null;
 }
@@ -56,10 +57,14 @@ const PRIORITY_CFG: Record<string, { label: string; color: string; bg: string }>
   URGENT: { label: "Терміново", color: "#ef4444",  bg: "rgba(239,68,68,0.14)" },
 };
 
+const ASSIGNEES = ["Всі", "Андрій", "Лідусик"] as const;
+type AssigneeFilter = typeof ASSIGNEES[number];
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilter>("Всі");
 
   const fetchTasks = useCallback(async () => {
     const res = await fetch("/api/tasks");
@@ -107,20 +112,24 @@ export default function TasksPage() {
     await fetch(`/api/tasks/${id}`, { method: "DELETE" });
   }
 
-  const byStatus = (status: string) => tasks.filter((t) => t.status === status);
-  const totalDone = tasks.filter((t) => t.status === "DONE").length;
-  const totalOverdue = tasks.filter(
+  const visibleTasks = assigneeFilter === "Всі"
+    ? tasks
+    : tasks.filter((t) => t.assignee === assigneeFilter);
+
+  const byStatus = (status: string) => visibleTasks.filter((t) => t.status === status);
+  const totalDone = visibleTasks.filter((t) => t.status === "DONE").length;
+  const totalOverdue = visibleTasks.filter(
     (t) => t.status !== "DONE" && t.deadline && isPast(new Date(t.deadline))
   ).length;
 
   return (
     <div className="p-6 h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-lg font-semibold text-[var(--text)]">Задачі</h1>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            {tasks.length} задач · {totalDone} виконано
+            {visibleTasks.length} задач · {totalDone} виконано
             {totalOverdue > 0 && (
               <span style={{ color: "#ef4444" }}> · {totalOverdue} прострочено</span>
             )}
@@ -133,6 +142,37 @@ export default function TasksPage() {
         >
           <Plus size={15} /> Нова задача
         </button>
+      </div>
+
+      {/* Assignee filter tabs */}
+      <div className="flex gap-1.5 mb-4">
+        {ASSIGNEES.map((a) => {
+          const count = a === "Всі" ? tasks.length : tasks.filter((t) => t.assignee === a).length;
+          const active = assigneeFilter === a;
+          return (
+            <button
+              key={a}
+              onClick={() => setAssigneeFilter(a)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+              style={{
+                background: active ? "var(--accent)" : "var(--surface)",
+                color: active ? "#000" : "var(--text-muted)",
+                border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+              }}
+            >
+              {a}
+              <span
+                className="px-1 py-0.5 rounded text-xs font-bold"
+                style={{
+                  background: active ? "rgba(0,0,0,0.2)" : "var(--surface-2)",
+                  color: active ? "#000" : "var(--text-muted)",
+                }}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
@@ -271,6 +311,19 @@ export default function TasksPage() {
                                       </span>
                                     )}
                                   </div>
+
+                                  {/* Assignee badge */}
+                                  {task.assignee && (
+                                    <span
+                                      className="inline-block text-xs px-1.5 py-0.5 rounded-md font-medium mb-1.5"
+                                      style={{
+                                        background: task.assignee === "Андрій" ? "rgba(201,140,10,0.15)" : "rgba(168,85,247,0.15)",
+                                        color: task.assignee === "Андрій" ? "#C98C0A" : "#a855f7",
+                                      }}
+                                    >
+                                      {task.assignee}
+                                    </span>
+                                  )}
 
                                   {/* Lead / Deal + Delete */}
                                   <div className="flex items-center justify-between mt-2">
