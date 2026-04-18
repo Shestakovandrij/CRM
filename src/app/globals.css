@@ -381,7 +381,7 @@ body::after {
   left: 0;
   height: 100%;
   width: 208px;
-  z-index: 10;
+  z-index: 60;
   flex-direction: column;
   flex-shrink: 0;
 }
