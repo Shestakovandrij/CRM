@@ -12,13 +12,19 @@ model Lead {
   id          String     @id @default(cuid())
   name        String
   instagram   String?
+  telegram    String?
   phone       String?
   email       String?
   comment     String?
   source      String?
+  geo         String?
+  niche       String?
+  amount      Float?
   tags        String[]
   status      LeadStatus @default(NEW)
   lastContact DateTime?
+  remindAt    DateTime?
+  remindSent  Boolean    @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -66,6 +72,8 @@ model Task {
   deadline    DateTime?
   status      TaskStatus @default(TODO)
   priority    Priority   @default(MEDIUM)
+  remindAt    DateTime?
+  remindSent  Boolean    @default(false)
   leadId      String?
   lead        Lead?      @relation(fields: [leadId], references: [id], onDelete: SetNull)
   dealId      String?
@@ -84,6 +92,7 @@ enum Priority {
   LOW
   MEDIUM
   HIGH
+  URGENT
 }
 
 model Activity {
