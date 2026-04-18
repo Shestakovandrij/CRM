@@ -10,28 +10,28 @@ import {
   Bar,
   XAxis,
   YAxis,
-  LineChart,
-  Line,
   Area,
   AreaChart,
 } from "recharts";
 
 export const CARD = {
-  background: "rgba(10, 24, 15, 0.88)",
-  backdropFilter: "blur(20px)",
-  WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(0,229,160,0.10)",
-  boxShadow: "0 4px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(0,229,160,0.06)",
-  borderRadius: 16,
+  background: "linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.012) 40%, rgba(255,255,255,0) 100%), rgba(10,10,10,0.82)",
+  backdropFilter: "blur(48px) saturate(180%) brightness(1.06)",
+  WebkitBackdropFilter: "blur(48px) saturate(180%) brightness(1.06)",
+  border: "1px solid rgba(255,255,255,0.09)",
+  boxShadow: "0 8px 60px -12px rgba(0,0,0,0.80), 0 4px 24px -4px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.55)",
+  borderRadius: 18,
+  position: "relative" as const,
+  overflow: "hidden" as const,
 } as React.CSSProperties;
 
 const TOOLTIP_STYLE = {
-  background: "rgba(3,9,5,0.97)",
-  border: "1px solid rgba(0,229,160,0.18)",
+  background: "rgba(8,8,8,0.97)",
+  border: "1px solid rgba(255,255,255,0.10)",
   borderRadius: 10,
-  color: "#e8f5ef",
+  color: "#f0f0f0",
   fontSize: 12,
-  boxShadow: "0 4px 20px rgba(0,0,0,0.6)",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.7)",
 };
 
 interface LeadStatus {
@@ -45,19 +45,19 @@ interface DealStatus {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  NEW:         "#00e5a0",
+  NEW:         "#C98C0A",
   CONTACTED:   "#22d3ee",
   NEGOTIATION: "#a78bfa",
-  WON:         "#00e5a0",
+  WON:         "#C98C0A",
   LOST:        "#f87171",
 };
 
 const DEAL_COLORS: Record<string, string> = {
-  PLANNING:    "#00e5a0",
+  PLANNING:    "#C98C0A",
   DESIGN:      "#22d3ee",
   DEVELOPMENT: "#a78bfa",
   TESTING:     "#fbbf24",
-  COMPLETED:   "#00c070",
+  COMPLETED:   "#00cc33",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -77,7 +77,7 @@ export function LeadDonutChart({ data }: { data: LeadStatus[] }) {
   const chartData = data.map((d) => ({
     name: STATUS_LABELS[d.status] ?? d.status,
     value: d._count.status,
-    color: STATUS_COLORS[d.status] ?? "#4a7a62",
+    color: STATUS_COLORS[d.status] ?? "#444444",
   }));
 
   const total = chartData.reduce((s, d) => s + d.value, 0);
@@ -151,7 +151,7 @@ export function TaskProgressRing({ done, total }: { done: number; total: number 
           <circle
             cx={64} cy={64} r={r}
             fill="none"
-            stroke="rgba(0,229,160,0.10)"
+            stroke="rgba(255,255,255,0.06)"
             strokeWidth={10}
           />
           <circle
@@ -162,11 +162,11 @@ export function TaskProgressRing({ done, total }: { done: number; total: number 
             strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.8s ease", filter: "drop-shadow(0 0 6px rgba(0,229,160,0.5))" }}
+            style={{ transition: "stroke-dashoffset 0.8s ease", filter: "drop-shadow(0 0 6px rgba(201,140,10,0.5))" }}
           />
           <defs>
             <linearGradient id="ring-grad-new" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#00e5a0" />
+              <stop offset="0%" stopColor="#C98C0A" />
               <stop offset="100%" stopColor="#22d3ee" />
             </linearGradient>
           </defs>
@@ -189,7 +189,7 @@ export function DealBarChart({ data }: { data: DealStatus[] }) {
   const chartData = data.map((d) => ({
     name: STATUS_LABELS[d.status] ?? d.status,
     value: d._count.status,
-    fill: DEAL_COLORS[d.status] ?? "#4a7a62",
+    fill: DEAL_COLORS[d.status] ?? "#333333",
   }));
 
   if (chartData.every((d) => d.value === 0)) {
@@ -205,13 +205,13 @@ export function DealBarChart({ data }: { data: DealStatus[] }) {
       <BarChart data={chartData} barSize={28}>
         <XAxis
           dataKey="name"
-          tick={{ fontSize: 9, fill: "#4a7a62" }}
+          tick={{ fontSize: 9, fill: "#555555" }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis hide allowDecimals={false} />
         <Tooltip
-          cursor={{ fill: "rgba(0,229,160,0.04)" }}
+          cursor={{ fill: "rgba(255,255,255,0.03)" }}
           contentStyle={TOOLTIP_STYLE}
         />
         <Bar dataKey="value" name="Deals" radius={[6, 6, 0, 0]}>
@@ -231,14 +231,14 @@ export function MiniLineChart({ points }: { points: number[] }) {
       <AreaChart data={data}>
         <defs>
           <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#00e5a0" stopOpacity={0.25} />
-            <stop offset="100%" stopColor="#00e5a0" stopOpacity={0} />
+            <stop offset="0%" stopColor="#C98C0A" stopOpacity={0.20} />
+            <stop offset="100%" stopColor="#C98C0A" stopOpacity={0} />
           </linearGradient>
         </defs>
         <Area
           type="monotone"
           dataKey="v"
-          stroke="#00e5a0"
+          stroke="#C98C0A"
           strokeWidth={2}
           fill="url(#area-grad)"
           dot={false}

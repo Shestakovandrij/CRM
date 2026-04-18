@@ -308,24 +308,34 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {/* ── Bot info ── */}
-      <div className="px-4 sm:px-6 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]/50 shrink-0">
-        <div className="flex items-start sm:items-center gap-2 sm:gap-4 text-xs text-[var(--text-muted)] flex-wrap">
-          <span className="font-medium text-[var(--text)] shrink-0">Telegram-бот:</span>
-          <span className="flex items-center gap-1.5">
-            ID:
-            <code
-              onClick={() => { navigator.clipboard.writeText(id); }}
-              className="px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--accent)] font-mono cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity"
-              title="Клікни щоб скопіювати"
-            >
-              {id.slice(0, 8)}…
-            </code>
-          </span>
-          <span className="hidden sm:inline text-[var(--border)]">|</span>
-          <span>
-            Команда: <code className="text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded font-mono">/run {id.slice(0, 6)}…</code>
-          </span>
+      {/* ── Auto-connect status ── */}
+      <div className="px-4 sm:px-6 py-2.5 border-b border-[var(--border)] shrink-0"
+        style={{ background: "rgba(16,16,16,0.60)" }}
+      >
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap">
+          {campaign.status === "RUNNING" ? (
+            <>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                <span className="text-emerald-400 font-medium">Telegram-бот підключено — розсилка виконується автоматично</span>
+              </span>
+            </>
+          ) : campaign.status === "PAUSED" ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
+              <span className="text-yellow-400 font-medium">Пауза — натисни Продовжити щоб бот відновив роботу</span>
+            </>
+          ) : campaign.status === "COMPLETED" ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+              <span className="text-blue-400 font-medium">Завершено</span>
+            </>
+          ) : (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-dim)] inline-block" />
+              <span>Натисни <strong className="text-[var(--text)]">Запустити</strong> — бот автоматично отримає задачу і розпочне розсилку</span>
+            </>
+          )}
         </div>
       </div>
 

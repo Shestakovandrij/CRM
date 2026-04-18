@@ -130,107 +130,236 @@ body::after {
   z-index: 0;
 }
 
-/* ──────────────────────────────────
-   GLASSMORPHISM — Enhanced
-────────────────────────────────── */
+/* ══════════════════════════════════
+   GLASSMORPHISM — Apple-level
+   Ключові принципи:
+   · Глибокий blur (40-60px) + saturate
+   · Багатошаровий фон: градієнт + base
+   · Layered box-shadow (ambient + key + rim)
+   · Top-edge specular highlight
+   · Тонка border з gradient через ::before
+   · Noise texture для "матового скла"
+══════════════════════════════════ */
 
+/* Базова glass карточка */
 .glass-card {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0.01) 100%
-    ),
-    rgba(12, 12, 12, 0.88);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 4px 40px rgba(0, 0, 0, 0.65),
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.40) inset;
-  border-radius: 16px;
   position: relative;
   overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+
+  /* Багатошаровий фон — base + white tint + subtle grain */
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.055) 0%,
+      rgba(255, 255, 255, 0.015) 40%,
+      rgba(255, 255, 255, 0.00)  100%
+    ),
+    rgba(10, 10, 10, 0.82);
+
+  /* Глибокий Apple-blur */
+  backdrop-filter: blur(48px) saturate(180%) brightness(1.06);
+  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(1.06);
+
+  /* Layered shadows */
+  box-shadow:
+    /* ambient (широкий, м'який) */
+    0 8px 60px -12px rgba(0, 0, 0, 0.80),
+    /* key light (ближче) */
+    0 4px 24px -4px  rgba(0, 0, 0, 0.55),
+    /* rim light знизу */
+    0 1px 0 rgba(0, 0, 0, 0.60) inset,
+    /* specular top */
+    0 1px 0 rgba(255, 255, 255, 0.07) inset;
+
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease;
 }
 
-/* Top shimmer highlight */
+/* Specular top-edge highlight — характерна для Apple glass */
 .glass-card::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 1px;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.12) 30%,
-    rgba(201, 140, 10, 0.20) 60%,
-    transparent 100%
+    transparent        5%,
+    rgba(255,255,255,0.18) 30%,
+    rgba(201,140,10, 0.22) 55%,
+    rgba(255,255,255,0.10) 75%,
+    transparent        95%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Subtle noise/grain — "матовість" скла */
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 120px 120px;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 12px 72px -12px rgba(0, 0, 0, 0.85),
+    0 6px 32px  -4px  rgba(0, 0, 0, 0.60),
+    0 1px 0 rgba(0, 0, 0, 0.60) inset,
+    0 1px 0 rgba(255, 255, 255, 0.10) inset,
+    0 0 0 1px rgba(201, 140, 10, 0.10) inset;
+}
+
+/* ── Accent glass — з golden tint ── */
+.glass-card-accent {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(201, 140, 10, 0.22);
+
+  background:
+    linear-gradient(
+      160deg,
+      rgba(201, 140, 10, 0.10) 0%,
+      rgba(201, 140, 10, 0.03) 50%,
+      rgba(255, 255, 255, 0.01) 100%
+    ),
+    rgba(10, 10, 10, 0.85);
+
+  backdrop-filter: blur(48px) saturate(200%) brightness(1.08);
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.08);
+
+  box-shadow:
+    0 8px 60px -12px rgba(0, 0, 0, 0.75),
+    0 4px 24px -4px  rgba(0, 0, 0, 0.50),
+    0 0 32px -8px rgba(201, 140, 10, 0.12) inset,
+    0 1px 0  rgba(255, 255, 255, 0.07) inset;
+}
+
+.glass-card-accent::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent        5%,
+    rgba(201,140,10, 0.40) 35%,
+    rgba(255,255,255,0.25) 60%,
+    transparent        95%
   );
   pointer-events: none;
 }
 
-.glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.13);
-  box-shadow:
-    0 8px 52px rgba(0, 0, 0, 0.70),
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 0 0 1px rgba(201, 140, 10, 0.08) inset;
-  transition: border-color 0.25s, box-shadow 0.25s;
-}
+/* ── Stat/metric card variant ── */
+.glass-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
 
-/* ── Accent-tinted glass variant ── */
-.glass-card-accent {
   background:
     linear-gradient(
-      135deg,
-      rgba(201, 140, 10, 0.07) 0%,
-      rgba(201, 140, 10, 0.02) 100%
+      145deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.00) 100%
     ),
-    rgba(12, 12, 12, 0.90);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(201, 140, 10, 0.18);
+    rgba(12, 12, 12, 0.78);
+
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+
   box-shadow:
-    0 4px 40px rgba(0, 0, 0, 0.60),
-    0 0 20px rgba(201, 140, 10, 0.06) inset,
+    0 4px 32px -8px  rgba(0, 0, 0, 0.70),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.glass-stat::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 10%,
+    rgba(255,255,255,0.14) 40%,
+    rgba(255,255,255,0.08) 70%,
+    transparent 90%
+  );
+  pointer-events: none;
+}
+
+.glass-stat:hover {
+  border-color: rgba(255, 255, 255, 0.13);
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 40px -8px rgba(0, 0, 0, 0.75),
+    0 1px 0 rgba(255, 255, 255, 0.07) inset;
+}
+
+/* ── Panel / section glass ── */
+.glass-panel {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.03) 0%,
+      rgba(255,255,255,0.00) 100%
+    ),
+    rgba(8, 8, 8, 0.92);
+  backdrop-filter: blur(60px) saturate(180%);
+  -webkit-backdrop-filter: blur(60px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 16px 80px -16px rgba(0, 0, 0, 0.90),
     0 1px 0 rgba(255, 255, 255, 0.06) inset;
-  border-radius: 16px;
+  border-radius: 20px;
 }
 
-/* ── Neon accent glow ── */
-.neon-glow {
-  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(201, 140, 10, 0.12);
-}
-
-.text-glow {
-  text-shadow: 0 0 16px var(--accent-glow);
-}
-
-/* ── Gradient border trick ── */
+/* ── Gradient border (CSS mask trick) ── */
 .gradient-border {
   position: relative;
-  border-radius: 16px;
+  border-radius: 18px;
+  border: none !important;
 }
 .gradient-border::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(201, 140, 10, 0.30) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(124, 58, 237, 0.15) 100%
+    rgba(201, 140, 10, 0.45) 0%,
+    rgba(255, 255, 255, 0.10) 40%,
+    rgba(124, 58, 237, 0.20) 80%,
+    rgba(201, 140, 10, 0.20) 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+}
+
+/* ── Neon / glow helpers ── */
+.neon-glow {
+  box-shadow:
+    0 0 16px var(--accent-glow),
+    0 0 48px rgba(201, 140, 10, 0.10);
+}
+
+.text-glow {
+  text-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(201,140,10,0.20);
 }
 
 /* ── Scrollbar ── */

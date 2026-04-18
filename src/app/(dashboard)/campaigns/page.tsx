@@ -108,7 +108,7 @@ export default function CampaignsPage() {
         <div>
           <h1 className="text-lg sm:text-xl font-semibold text-[var(--text)]">Instagram розсилки</h1>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
-            Запускайте кампанії прямо з CRM
+            Натисни Запустити — бот стартує автоматично
           </p>
         </div>
         <button
