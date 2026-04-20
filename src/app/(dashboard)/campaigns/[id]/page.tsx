@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Play, Pause, Upload, Plus, Trash2,
   CheckCircle2, XCircle, Clock, AlertCircle, Loader2,
-  RotateCcw, Square,
+  RotateCcw, Square, Pencil, Check, X,
 } from "lucide-react";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
@@ -57,6 +57,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   const [addOpen, setAddOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newMessage, setNewMessage] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   const { data: campaign, isLoading } = useQuery<Campaign>({
     queryKey: ["campaign", id],
@@ -129,6 +131,19 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         body: JSON.stringify({ status: "PENDING", errorMessage: null }),
       }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campaign", id] }),
+  });
+
+  const editMut = useMutation({
+    mutationFn: ({ recipientId, messageText }: { recipientId: string; messageText: string }) =>
+      fetch(`/api/campaigns/${id}/recipients/${recipientId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageText }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign", id] });
+      setEditingId(null);
+    },
   });
 
   function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -414,7 +429,34 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                     <tr key={r.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-2)]/30">
                       <td className="px-4 py-3 font-mono text-[var(--accent)] text-xs">@{r.instagramUsername}</td>
                       <td className="px-4 py-3 text-[var(--text-muted)] max-w-xs">
-                        <span className="line-clamp-2 text-xs">{r.messageText}</span>
+                        {editingId === r.id ? (
+                          <div className="flex flex-col gap-1.5">
+                            <textarea
+                              autoFocus
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              rows={4}
+                              className="w-full px-2 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--accent)]/60 text-xs text-[var(--text)] outline-none resize-y"
+                            />
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => editMut.mutate({ recipientId: r.id, messageText: editText })}
+                                disabled={!editText.trim() || editMut.isPending}
+                                className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-xs hover:bg-emerald-500/30 disabled:opacity-50"
+                              >
+                                <Check size={11} /> Зберегти
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--surface-2)] text-[var(--text-muted)] text-xs hover:text-[var(--text)]"
+                              >
+                                <X size={11} /> Скасувати
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="line-clamp-2 text-xs whitespace-pre-wrap">{r.messageText}</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`flex items-center gap-1.5 text-xs ${cfg.cls}`}>
@@ -439,6 +481,13 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                               <RotateCcw size={12} />
                             </button>
                           )}
+                          <button
+                            onClick={() => { setEditingId(r.id); setEditText(r.messageText); }}
+                            title="Редагувати"
+                            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
+                          >
+                            <Pencil size={12} />
+                          </button>
                           <button
                             onClick={() => deleteMut.mutate(r.id)}
                             title="Видалити"
@@ -471,7 +520,34 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                           {cfg.label}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-muted)] line-clamp-2">{r.messageText}</p>
+                      {editingId === r.id ? (
+                        <div className="flex flex-col gap-1.5 mt-1">
+                          <textarea
+                            autoFocus
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            rows={4}
+                            className="w-full px-2 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--accent)]/60 text-xs text-[var(--text)] outline-none resize-y"
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => editMut.mutate({ recipientId: r.id, messageText: editText })}
+                              disabled={!editText.trim() || editMut.isPending}
+                              className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-xs hover:bg-emerald-500/30 disabled:opacity-50"
+                            >
+                              <Check size={11} /> Зберегти
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--surface-2)] text-[var(--text-muted)] text-xs"
+                            >
+                              <X size={11} /> Скасувати
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[var(--text-muted)] line-clamp-2 whitespace-pre-wrap">{r.messageText}</p>
+                      )}
                       {r.errorMessage && (
                         <p className="text-xs text-red-400/80 mt-0.5 truncate">{r.errorMessage}</p>
                       )}
@@ -490,6 +566,12 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                           <RotateCcw size={14} />
                         </button>
                       )}
+                      <button
+                        onClick={() => { setEditingId(r.id); setEditText(r.messageText); }}
+                        className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90 transition-all"
+                      >
+                        <Pencil size={14} />
+                      </button>
                       <button
                         onClick={() => deleteMut.mutate(r.id)}
                         className="p-2 rounded-lg text-[var(--text-muted)] hover:text-red-400 active:scale-90 transition-all"

@@ -22,6 +22,7 @@ export async function PUT(
       ...(body.status !== undefined && { status: body.status }),
       ...(body.sentAt !== undefined && { sentAt: body.sentAt }),
       ...(body.errorMessage !== undefined && { errorMessage: body.errorMessage }),
+      ...(body.messageText !== undefined && { messageText: body.messageText }),
     },
   });
 
