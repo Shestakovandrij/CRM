@@ -176,8 +176,17 @@ export class InstagramBot {
     await input.click();
     await randomDelay(500, 1000);
 
-    // Type with human-like delays
-    await this.page.keyboard.type(message, { delay: 40 + Math.random() * 60 });
+    // Type with human-like delays, preserving line breaks via Shift+Enter
+    const lines = message.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].length > 0) {
+        await this.page.keyboard.type(lines[i], { delay: 40 + Math.random() * 60 });
+      }
+      if (i < lines.length - 1) {
+        await this.page.keyboard.press("Shift+Enter");
+        await sleep(80 + Math.random() * 120);
+      }
+    }
     await randomDelay(800, 1500);
 
     // Send via Enter key (most reliable across Instagram UI versions)

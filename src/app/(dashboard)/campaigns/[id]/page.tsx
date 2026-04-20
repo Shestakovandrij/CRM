@@ -355,11 +355,12 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             </div>
             <div className="flex-1 w-full">
               <label className="text-xs text-[var(--text-muted)] mb-1 block">Текст повідомлення</label>
-              <input
+              <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Привіт! Хочу запропонувати..."
-                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]/60"
+                rows={5}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]/60 resize-y"
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
