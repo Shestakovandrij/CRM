@@ -150,20 +150,33 @@ export class InstagramBot {
       throw new Error("CANT_MESSAGE: кнопка Message не знайдена (приватний або заблокований акаунт)");
     }
 
-    await randomDelay(1500, 3000);
+    // Wait for navigation to /direct/ page
+    await this.page.waitForURL((url) => url.pathname.includes("/direct/"), { timeout: 15000 }).catch(() => null);
+    await randomDelay(1500, 2500);
 
-    // Wait for DM input — Instagram uses contenteditable div
+    // Dismiss "Turn on notifications" popup if it appears
+    const notifDismiss = this.page.locator(
+      'button:has-text("Not Now"), button:has-text("Не зараз"), button:has-text("Не сейчас"), button:has-text("Cancel"), [aria-label="Close"]'
+    ).first();
+    if (await notifDismiss.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await notifDismiss.click();
+      await randomDelay(500, 1000);
+    }
+
+    // Wait for DM input — Instagram uses contenteditable div on /direct/ page
     const inputSelectors = [
       'div[aria-label="Message"]',
-      'div[contenteditable="true"]',
-      'textarea[placeholder]',
+      'div[aria-label="Повідомлення"]',
+      'div[aria-label="Написать сообщение"]',
+      'div[contenteditable="true"][aria-label]',
       'div[role="textbox"]',
+      'div[contenteditable="true"]',
     ];
 
     let input = null;
     for (const sel of inputSelectors) {
       const el = this.page.locator(sel).last();
-      if (await el.isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (await el.isVisible({ timeout: 8000 }).catch(() => false)) {
         input = el;
         break;
       }
