@@ -54,8 +54,8 @@ export class InstagramBot {
     await this.page.goto("https://www.instagram.com/accounts/login/", { waitUntil: "networkidle" });
     await randomDelay(1000, 2000);
 
-    // Handle cookie popup if it appears
-    const cookieBtn = this.page.locator("button:has-text('Allow'), button:has-text('Accept')").first();
+    // Handle cookie popup if it appears (all languages)
+    const cookieBtn = this.page.locator("button:has-text('Allow'), button:has-text('Accept'), button:has-text('Дозволити всі'), button:has-text('Прийняти'), button:has-text('Принять')").first();
     if (await cookieBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await cookieBtn.click();
       await randomDelay();
@@ -105,28 +105,41 @@ export class InstagramBot {
     });
     await randomDelay(1500, 2500);
 
-    // Check if account exists
+    // Check if account exists (all languages)
     const pageText = await this.page.textContent("body");
     if (
       pageText?.includes("Sorry, this page isn't available") ||
       pageText?.includes("Page not found") ||
+      pageText?.includes("Вибачте, ця сторінка недоступна") ||
+      pageText?.includes("Страница не найдена") ||
       this.page.url().includes("/explore/")
     ) {
       throw new Error("NOT_FOUND");
     }
 
-    // Find and click Message button — try multiple selectors
+    // Find and click Message button — all UI languages + selector variants
     const messageBtnSelectors = [
+      // Ukrainian
+      'div[role="button"]:has-text("Повідомлення")',
+      // English
       'div[role="button"]:has-text("Message")',
+      // Russian
+      'div[role="button"]:has-text("Написать")',
+      // Generic role buttons with text
       'a[role="button"]:has-text("Message")',
+      'a[role="button"]:has-text("Повідомлення")',
       'button:has-text("Message")',
+      'button:has-text("Повідомлення")',
+      // Aria labels
       '[aria-label="Message"]',
+      '[aria-label="Повідомлення"]',
+      '[aria-label="Написать"]',
     ];
 
     let clicked = false;
     for (const sel of messageBtnSelectors) {
       const btn = this.page.locator(sel).first();
-      if (await btn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      if (await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await btn.click();
         clicked = true;
         break;
