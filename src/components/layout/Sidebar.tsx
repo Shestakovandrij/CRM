@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard, Users, Briefcase, CheckSquare,
-  Kanban, Send, LogOut, X,
+  Kanban, Send, Database, LogOut, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobileMenu } from "@/lib/useMobileMenu";
@@ -17,6 +17,7 @@ const nav = [
   { href: "/clients",   icon: Briefcase,       label: "Clients" },
   { href: "/tasks",     icon: CheckSquare,     label: "Tasks" },
   { href: "/campaigns", icon: Send,            label: "Campaigns" },
+  { href: "/broadcast-base", icon: Database,   label: "База розсилок" },
 ];
 
 const glassStyle: React.CSSProperties = {

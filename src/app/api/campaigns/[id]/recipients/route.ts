@@ -26,13 +26,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const body = await req.json();
 
-  // bulk import: body.recipients = [{ instagramUsername, messageText }]
+  // bulk import: body.recipients = [{ instagramUsername, messageText, niche? }]
   if (Array.isArray(body.recipients)) {
     const created = await db.campaignRecipient.createMany({
-      data: body.recipients.map((r: { instagramUsername: string; messageText: string }) => ({
+      data: body.recipients.map((r: { instagramUsername: string; messageText: string; niche?: string }) => ({
         campaignId: id,
         instagramUsername: r.instagramUsername.replace(/^@/, "").trim(),
         messageText: r.messageText,
+        niche: r.niche?.trim() || null,
       })),
       skipDuplicates: false,
     });
@@ -45,6 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       campaignId: id,
       instagramUsername: body.instagramUsername.replace(/^@/, "").trim(),
       messageText: body.messageText,
+      niche: body.niche?.trim() || null,
     },
   });
   return NextResponse.json(recipient, { status: 201 });
