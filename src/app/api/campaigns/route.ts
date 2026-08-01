@@ -10,15 +10,29 @@ export async function GET(req: Request) {
   const session = await auth();
   if (!session && !isBotRequest(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const campaigns = await db.campaign.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { recipients: true } },
-      recipients: { select: { status: true } },
-    },
-  });
+  // Рахуємо статуси в базі, а не вивантажуємо всі рядки отримувачів у браузер.
+  const [campaigns, counts] = await Promise.all([
+    db.campaign.findMany({ orderBy: { createdAt: "desc" } }),
+    db.campaignRecipient.groupBy({
+      by: ["campaignId", "status"],
+      _count: { _all: true },
+    }),
+  ]);
 
-  return NextResponse.json(campaigns);
+  const byCampaign = new Map<string, Record<string, number>>();
+  for (const c of counts) {
+    const stats = byCampaign.get(c.campaignId) ?? {};
+    stats[c.status] = c._count._all;
+    byCampaign.set(c.campaignId, stats);
+  }
+
+  return NextResponse.json(
+    campaigns.map((c) => {
+      const stats = byCampaign.get(c.id) ?? {};
+      const total = Object.values(stats).reduce((a, n) => a + n, 0);
+      return { ...c, stats, _count: { recipients: total } };
+    }),
+  );
 }
 
 export async function POST(req: Request) {

@@ -68,8 +68,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     data: {
       ...(body.name   !== undefined && { name: body.name }),
       ...(body.status !== undefined && { status: body.status }),
+      ...(body.niche  !== undefined && { niche: body.niche?.trim() || null }),
     },
   });
+
+  // Ніша кампанії — значення за замовчуванням для отримувачів, які власної не мають.
+  if (body.niche !== undefined && body.applyNicheToAll) {
+    await db.campaignRecipient.updateMany({
+      where: { campaignId: id },
+      data: { niche: body.niche?.trim() || null },
+    });
+  }
 
   // Миттєвий тригер боту при зміні статусу
   if (body.status === "RUNNING") {

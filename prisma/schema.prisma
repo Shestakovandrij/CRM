@@ -121,6 +121,8 @@ model Campaign {
   id         String              @id @default(cuid())
   name       String
   status     CampaignStatus      @default(DRAFT)
+  /// Ніша за замовчуванням — успадковується отримувачами, якщо в них своя не задана.
+  niche      String?
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
   recipients CampaignRecipient[]
@@ -139,10 +141,15 @@ model CampaignRecipient {
   campaign          Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   instagramUsername String
   messageText       String
+  /// Ніша конкретного отримувача — перекриває нішу кампанії.
+  niche             String?
   status            RecipientStatus @default(PENDING)
   sentAt            DateTime?
   errorMessage      String?
   createdAt         DateTime        @default(now())
+
+  @@index([campaignId])
+  @@index([campaignId, status])
 }
 
 enum RecipientStatus {
@@ -152,4 +159,42 @@ enum RecipientStatus {
   ERROR
   NOT_FOUND
   SKIPPED
+}
+
+/// База розсилок — одна картка на Instagram-акаунт, незалежно від кількості кампаній.
+model BroadcastLead {
+  id          String          @id @default(cuid())
+  /// Основний унікальний ідентифікатор ліда.
+  instagram   String          @unique
+  niche       String?
+  /// Кількість УСПІШНИХ відправок — джерело для колонки «кількість попередніх розсилок».
+  sendCount   Int             @default(0)
+  firstSentAt DateTime?
+  lastSentAt  DateTime?
+  lastStatus  RecipientStatus @default(SENT)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  sends BroadcastSend[]
+
+  @@index([niche])
+  @@index([lastSentAt])
+}
+
+/// Історія кожної окремої відправки в межах картки ліда.
+model BroadcastSend {
+  id           String          @id @default(cuid())
+  leadId       String
+  lead         BroadcastLead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// Кампанію могли видалити — тому звʼязок мʼякий, а назву зберігаємо копією.
+  campaignId   String?
+  campaignName String
+  messageText  String
+  niche        String?
+  status       RecipientStatus
+  sentAt       DateTime
+  createdAt    DateTime        @default(now())
+
+  @@index([leadId])
+  @@index([sentAt])
 }

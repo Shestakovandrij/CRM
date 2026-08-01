@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -16,7 +14,8 @@ interface Campaign {
   name: string;
   status: CampaignStatus;
   createdAt: string;
-  recipients: { status: RecipientStatus }[];
+  /** Кількість отримувачів за статусами — рахується в базі. */
+  stats: Partial<Record<RecipientStatus, number>>;
   _count: { recipients: number };
 }
 
@@ -27,11 +26,11 @@ const statusConfig: Record<CampaignStatus, { label: string; cls: string }> = {
   COMPLETED: { label: "Завершено", cls: "text-blue-400 bg-blue-400/10" },
 };
 
-function CampaignStats({ recipients }: { recipients: { status: RecipientStatus }[] }) {
-  const sent    = recipients.filter((r) => r.status === "SENT").length;
-  const errors  = recipients.filter((r) => r.status === "ERROR" || r.status === "NOT_FOUND").length;
-  const pending = recipients.filter((r) => r.status === "PENDING" || r.status === "SENDING").length;
-  const total   = recipients.length;
+function CampaignStats({ stats, total }: { stats: Campaign["stats"]; total: number }) {
+  const n       = (s: RecipientStatus) => stats[s] ?? 0;
+  const sent    = n("SENT");
+  const errors  = n("ERROR") + n("NOT_FOUND");
+  const pending = n("PENDING") + n("SENDING");
 
   return (
     <div className="flex items-center flex-wrap gap-3 text-xs text-[var(--text-muted)]">
@@ -60,10 +59,17 @@ export default function CampaignsPage() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
 
-  const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
+  const { data: campaigns = [], isLoading, isError } = useQuery<Campaign[]>({
     queryKey: ["campaigns"],
-    queryFn: () => fetch("/api/campaigns").then((r) => r.json()),
-    refetchInterval: 5000,
+    queryFn: async () => {
+      const r = await fetch("/api/campaigns");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    // Опитуємо базу лише поки бот реально працює — інакше відкрита вкладка
+    // тримала б Postgres під навантаженням цілодобово.
+    refetchInterval: (q) =>
+      q.state.data?.some((c) => c.status === "RUNNING") ? 5000 : false,
   });
 
   const createMut = useMutation({
@@ -156,6 +162,17 @@ export default function CampaignsPage() {
           <div className="flex items-center justify-center py-20 text-[var(--text-muted)] text-sm">
             Завантаження...
           </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Send size={40} className="text-red-400 opacity-40" />
+            <p className="text-red-400 text-sm">Не вдалося завантажити кампанії</p>
+            <button
+              onClick={() => qc.invalidateQueries({ queryKey: ["campaigns"] })}
+              className="px-3 py-1.5 rounded-lg bg-[var(--surface-2)] text-xs text-[var(--text)] hover:opacity-80"
+            >
+              Спробувати ще раз
+            </button>
+          </div>
         ) : campaigns.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Send size={40} className="text-[var(--text-muted)] opacity-30" />
@@ -166,7 +183,7 @@ export default function CampaignsPage() {
             {campaigns.map((c) => {
               const cfg = statusConfig[c.status];
               const total = c._count.recipients;
-              const sent = c.recipients.filter((r) => r.status === "SENT").length;
+              const sent = c.stats.SENT ?? 0;
               const progress = total > 0 ? (sent / total) * 100 : 0;
 
               return (
@@ -185,7 +202,7 @@ export default function CampaignsPage() {
                     </div>
                     {total > 0 ? (
                       <>
-                        <CampaignStats recipients={c.recipients} />
+                        <CampaignStats stats={c.stats} total={total} />
                         <div className="mt-2 h-1 rounded-full bg-[var(--surface-2)] overflow-hidden">
                           <div
                             className="h-full rounded-full bg-emerald-400 transition-all"

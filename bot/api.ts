@@ -15,6 +15,15 @@ export interface Campaign {
   recipients: Recipient[];
 }
 
+/** Список кампаній віддає агреговану статистику, а не самі рядки отримувачів. */
+export interface CampaignSummary {
+  id: string;
+  name: string;
+  status: CampaignStatus;
+  stats: Partial<Record<RecipientStatus, number>>;
+  _count: { recipients: number };
+}
+
 export interface QueueResult {
   recipient: Recipient | null;
   campaignStatus: CampaignStatus;
@@ -41,7 +50,7 @@ export class CrmApi {
     return r;
   }
 
-  async getCampaigns(): Promise<Campaign[]> {
+  async getCampaigns(): Promise<CampaignSummary[]> {
     const r = await fetch(`${this.baseUrl}/api/campaigns`, { headers: this.headers() });
     await this.checkResponse(r, "getCampaigns");
     return r.json();

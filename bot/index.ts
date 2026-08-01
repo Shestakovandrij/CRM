@@ -239,8 +239,8 @@ bot.command("campaigns", async (ctx) => {
     if (!list.length) return ctx.reply("Кампаній немає. Створи в CRM.");
     const emoji: Record<string, string> = { DRAFT:"📝", RUNNING:"▶️", PAUSED:"⏸", COMPLETED:"✅" };
     const lines = list.map((c) => {
-      const sent = c.recipients?.filter((r) => r.status === "SENT").length || 0;
-      return `${emoji[c.status]||"•"} *${c.name}* (${sent}/${c.recipients?.length||0})\n  \`${c.id}\``;
+      const sent = c.stats?.SENT ?? 0;
+      return `${emoji[c.status]||"•"} *${c.name}* (${sent}/${c._count?.recipients ?? 0})\n  \`${c.id}\``;
     });
     await ctx.reply("📋 *Кампанії:*\n\n" + lines.join("\n\n"), { parse_mode: "Markdown" });
   } catch { await ctx.reply("❌ Помилка отримання кампаній."); }

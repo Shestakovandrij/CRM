@@ -1,5 +1,10 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
+
+// Дашборд читає БД на кожен запит. Без цього Next.js пререндерить сторінку під час
+// білду, і цифри залишаються замороженими на моменті деплою.
+export const dynamic = "force-dynamic";
+
 import { Users, Briefcase, CheckSquare, TrendingUp, ArrowUpRight } from "lucide-react";
 import {
   LeadDonutChart,

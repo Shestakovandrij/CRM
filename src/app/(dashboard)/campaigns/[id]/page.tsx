@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useRef, use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -20,6 +18,7 @@ interface Recipient {
   id: string;
   instagramUsername: string;
   messageText: string;
+  niche: string | null;
   status: RecipientStatus;
   sentAt: string | null;
   errorMessage: string | null;
@@ -29,6 +28,7 @@ interface Campaign {
   id: string;
   name: string;
   status: CampaignStatus;
+  niche: string | null;
   recipients: Recipient[];
 }
 
@@ -59,11 +59,22 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   const [newMessage, setNewMessage] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [newNiche, setNewNiche] = useState("");
+  const [nicheOpen, setNicheOpen] = useState(false);
+  const [nicheDraft, setNicheDraft] = useState("");
+  const [applyToAll, setApplyToAll] = useState(true);
+  const [editingNicheId, setEditingNicheId] = useState<string | null>(null);
+  const [nicheRowDraft, setNicheRowDraft] = useState("");
 
   const { data: campaign, isLoading } = useQuery<Campaign>({
     queryKey: ["campaign", id],
-    queryFn: () => fetch(`/api/campaigns/${id}`).then((r) => r.json()),
-    refetchInterval: 3000,
+    queryFn: async () => {
+      const r = await fetch(`/api/campaigns/${id}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    // Живе оновлення потрібне лише поки бот надсилає повідомлення.
+    refetchInterval: (q) => (q.state.data?.status === "RUNNING" ? 3000 : false),
   });
 
   const statusMut = useMutation({
@@ -103,17 +114,18 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   });
 
   const addMut = useMutation({
-    mutationFn: ({ instagramUsername, messageText }: { instagramUsername: string; messageText: string }) =>
+    mutationFn: ({ instagramUsername, messageText, niche }: { instagramUsername: string; messageText: string; niche?: string }) =>
       fetch(`/api/campaigns/${id}/recipients`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instagramUsername, messageText }),
+        body: JSON.stringify({ instagramUsername, messageText, niche }),
       }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["campaign", id] });
       setAddOpen(false);
       setNewUsername("");
       setNewMessage("");
+      setNewNiche("");
     },
   });
 
@@ -146,6 +158,34 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
     },
   });
 
+  /** Ніша всієї кампанії — за бажанням проставляється одразу всім отримувачам. */
+  const campaignNicheMut = useMutation({
+    mutationFn: ({ niche, applyNicheToAll }: { niche: string; applyNicheToAll: boolean }) =>
+      fetch(`/api/campaigns/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ niche, applyNicheToAll }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign", id] });
+      setNicheOpen(false);
+    },
+  });
+
+  /** Ніша окремого ліда — перекриває нішу кампанії. */
+  const rowNicheMut = useMutation({
+    mutationFn: ({ recipientId, niche }: { recipientId: string; niche: string }) =>
+      fetch(`/api/campaigns/${id}/recipients/${recipientId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ niche }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign", id] });
+      setEditingNicheId(null);
+    },
+  });
+
   function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -165,12 +205,16 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
           const message = (
             row["Message text"] || row["message"] || row["Текст повідомлення"] || row["повідомлення"] || Object.values(row)[1]
           )?.toString().trim();
-          return { instagramUsername: username, messageText: message };
+          // Ніша — необовʼязкова колонка; якщо її немає, спрацює ніша кампанії.
+          const niche = (
+            row["Ніша"] || row["ніша"] || row["Niche"] || row["niche"] || ""
+          )?.toString().trim();
+          return { instagramUsername: username, messageText: message, niche };
         })
         .filter((r) => r.instagramUsername && r.messageText);
 
       if (recipients.length > 0) {
-        importMut.mutate(recipients as { instagramUsername: string; messageText: string }[]);
+        importMut.mutate(recipients as { instagramUsername: string; messageText: string; niche?: string }[]);
       }
     };
     reader.readAsBinaryString(file);
@@ -221,6 +265,49 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusCfg.cls}`}>
               {statusCfg.label}
             </span>
+
+            {nicheOpen ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  autoFocus
+                  value={nicheDraft}
+                  onChange={(e) => setNicheDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") campaignNicheMut.mutate({ niche: nicheDraft, applyNicheToAll: applyToAll });
+                    if (e.key === "Escape") setNicheOpen(false);
+                  }}
+                  placeholder="Напр. Стоматології"
+                  className="px-2 py-1 rounded-lg bg-[var(--surface-2)] border border-[var(--accent)]/60 text-xs text-[var(--text)] outline-none w-44"
+                />
+                <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={applyToAll}
+                    onChange={(e) => setApplyToAll(e.target.checked)}
+                    className="accent-[var(--accent)]"
+                  />
+                  всім лідам
+                </label>
+                <button
+                  onClick={() => campaignNicheMut.mutate({ niche: nicheDraft, applyNicheToAll: applyToAll })}
+                  disabled={campaignNicheMut.isPending}
+                  className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50"
+                >
+                  <Check size={12} />
+                </button>
+                <button onClick={() => setNicheOpen(false)} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text)]">
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setNicheDraft(campaign.niche ?? ""); setNicheOpen(true); }}
+                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]/40 transition-colors shrink-0"
+              >
+                <Pencil size={10} />
+                Ніша: {campaign.niche || "не задана"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -368,6 +455,15 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                 className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]/60"
               />
             </div>
+            <div className="w-full sm:w-40">
+              <label className="text-xs text-[var(--text-muted)] mb-1 block">Ніша</label>
+              <input
+                value={newNiche}
+                onChange={(e) => setNewNiche(e.target.value)}
+                placeholder={campaign.niche || "як у кампанії"}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)]/60"
+              />
+            </div>
             <div className="flex-1 w-full">
               <label className="text-xs text-[var(--text-muted)] mb-1 block">Текст повідомлення</label>
               <textarea
@@ -380,7 +476,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <button
-                onClick={() => addMut.mutate({ instagramUsername: newUsername, messageText: newMessage })}
+                onClick={() => addMut.mutate({ instagramUsername: newUsername, messageText: newMessage, niche: newNiche })}
                 disabled={!newUsername.trim() || !newMessage.trim() || addMut.isPending}
                 className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-[var(--accent)] text-black text-sm font-semibold disabled:opacity-50"
               >
@@ -404,7 +500,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             <Upload size={36} className="text-[var(--text-muted)] opacity-30" />
             <p className="text-sm text-[var(--text-muted)]">Немає отримувачів. Імпортуйте Excel або додайте вручну.</p>
             <p className="text-xs text-[var(--text-muted)] opacity-60">
-              Формат: колонки «Instagram username» та «Message text»
+              Формат: колонки «Instagram username», «Message text» і, за бажанням, «Ніша»
             </p>
           </div>
         ) : (
@@ -414,6 +510,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
               <thead className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] w-44">Нікнейм</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] w-36">Ніша</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)]">Повідомлення</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] w-28">Статус</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-[var(--text-muted)] w-32">Час</th>
@@ -428,6 +525,36 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                   return (
                     <tr key={r.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-2)]/30">
                       <td className="px-4 py-3 font-mono text-[var(--accent)] text-xs">@{r.instagramUsername}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {editingNicheId === r.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              autoFocus
+                              value={nicheRowDraft}
+                              onChange={(e) => setNicheRowDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") rowNicheMut.mutate({ recipientId: r.id, niche: nicheRowDraft });
+                                if (e.key === "Escape") setEditingNicheId(null);
+                              }}
+                              className="w-24 px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--accent)]/60 text-xs text-[var(--text)] outline-none"
+                            />
+                            <button
+                              onClick={() => rowNicheMut.mutate({ recipientId: r.id, niche: nicheRowDraft })}
+                              className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                            >
+                              <Check size={11} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setNicheRowDraft(r.niche ?? ""); setEditingNicheId(r.id); }}
+                            className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors text-left"
+                            title="Змінити нішу"
+                          >
+                            {r.niche || <span className="opacity-40">{campaign.niche || "—"}</span>}
+                          </button>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-[var(--text-muted)] max-w-xs">
                         {editingId === r.id ? (
                           <div className="flex flex-col gap-1.5">
