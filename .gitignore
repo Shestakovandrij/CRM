@@ -44,5 +44,6 @@ next-env.d.ts
 
 # Bot (local only)
 bot/instagram-session.json
+bot/instagram-scout-session.json
 bot/node_modules/
 bot/.env
