@@ -227,6 +227,8 @@ model ScoutRun {
   requestedAt DateTime  @default(now())
   startedAt   DateTime?
   finishedAt  DateTime?
+  /// Оновлюється на кожен звіт бота — за ним видно, що розвідка ще жива.
+  updatedAt   DateTime  @updatedAt
 
   @@index([status, requestedAt])
 }

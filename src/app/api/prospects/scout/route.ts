@@ -8,6 +8,8 @@ function isBotRequest(req: Request) {
 
 /** Замовлення вважається протухлим, якщо бот не забрав його за 10 хвилин. */
 const STALE_MINUTES = 10;
+/** Розвідка без жодного руху 15 хвилин — бот найпевніше впав посеред роботи. */
+const STUCK_MINUTES = 15;
 
 /** Кнопка «Розвідка» — лишає замовлення, яке бот забере при наступному опитуванні. */
 export async function POST(req: Request) {
@@ -15,6 +17,15 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
+
+  // Замовлення, що зависло після падіння бота, не має блокувати кнопку назавжди.
+  await db.scoutRun.updateMany({
+    where: {
+      status: "RUNNING",
+      updatedAt: { lt: new Date(Date.now() - STUCK_MINUTES * 60_000) },
+    },
+    data: { status: "FAILED", error: "Бот перестав відповідати", finishedAt: new Date() },
+  });
 
   const active = await db.scoutRun.findFirst({
     where: { status: { in: ["REQUESTED", "RUNNING"] } },
@@ -42,13 +53,16 @@ export async function GET(req: Request) {
   const run = await db.scoutRun.findFirst({ orderBy: { requestedAt: "desc" } });
   if (!run) return NextResponse.json({ running: false, queued: false });
 
-  // Бот не забрав замовлення вчасно — значить він вимкнений.
-  const waitedMs = Date.now() - run.requestedAt.getTime();
-  const stale = run.status === "REQUESTED" && waitedMs > STALE_MINUTES * 60_000;
+  // Бот не забрав замовлення вчасно або замовк посеред роботи — він вимкнений.
+  const notClaimed =
+    run.status === "REQUESTED" && Date.now() - run.requestedAt.getTime() > STALE_MINUTES * 60_000;
+  const wentSilent =
+    run.status === "RUNNING" && Date.now() - run.updatedAt.getTime() > STUCK_MINUTES * 60_000;
+  const stale = notClaimed || wentSilent;
 
   return NextResponse.json({
-    running: run.status === "RUNNING",
-    queued: run.status === "REQUESTED" && !stale,
+    running: run.status === "RUNNING" && !wentSilent,
+    queued: run.status === "REQUESTED" && !notClaimed,
     stale,
     status: run.status,
     limit: run.limit,

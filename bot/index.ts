@@ -326,5 +326,14 @@ process.on("SIGINT", async () => {
 console.log("🤖 Telegram бот запущено");
 if (adminChatId) console.log(`💬 Admin chat ID: ${adminChatId}`);
 
-bot.start();
+// Telegram — допоміжний канал. Якщо той самий токен опитує ще один інстанс,
+// grammy кидає 409 і без цього перехоплення валить увесь процес разом
+// із розсилкою та розвідкою. Сповіщення втрачаємо, роботу — ні.
+bot.start().catch((e) => {
+  console.error("⚠️ Telegram недоступний, працюю без сповіщень:", (e as Error).message);
+});
+
+process.on("unhandledRejection", (e) => {
+  console.error("⚠️ Необроблена помилка (процес продовжує роботу):", e);
+});
 startAutoPoll();
