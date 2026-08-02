@@ -161,6 +161,83 @@ enum RecipientStatus {
   SKIPPED
 }
 
+/// Кандидат, знайдений розвідкою в Instagram. Нікнейм — унікальний ключ,
+/// той самий, що і в базі розсилок, тому дублі відсікаються звіркою по ньому.
+model Prospect {
+  id        String         @id @default(cuid())
+  instagram String         @unique
+  status    ProspectStatus @default(NEW)
+
+  // — Сигнали, зібрані з профілю. Зберігаємо все, навіть те, що не фільтрує,
+  //   щоб у таблиці було видно підставу для рішення.
+  fullName   String?
+  bio        String?
+  category   String?
+  followers  Int?
+  postsCount Int?
+  isPrivate  Boolean @default(false)
+
+  // — Головний критерій: чи є згадка про сайт.
+  externalUrl  String?
+  hasWebsite   Boolean @default(false)
+  /// Що саме визнано сайтом або посиланням: домен, linktr.ee, taplink.
+  siteEvidence String?
+
+  /// Звідки прийшов: "similar:username", "hashtag:тег", "geo:місто".
+  source String?
+  score  Int    @default(0)
+
+  /// Чернетка кампанії, у яку кандидата вже додано.
+  campaignId String?
+  notes      String?
+
+  checkedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([status, score])
+}
+
+enum ProspectStatus {
+  /// Знайдено, чекає на перегляд.
+  NEW
+  /// Схвалено вручну, готовий до кампанії.
+  APPROVED
+  /// Відхилено — більше ніколи не пропонувати.
+  REJECTED
+  /// Уже доданий у чернетку кампанії.
+  QUEUED
+}
+
+/// Точки входу для розвідки: від кого відштовхуватись у пошуку.
+model ProspectSeed {
+  id       String   @id @default(cuid())
+  type     SeedType
+  value    String
+  priority Int      @default(0)
+
+  lastRunAt DateTime?
+  runCount  Int       @default(0)
+  /// Скільки нових кандидатів дало це насіння — щоб бачити, що працює.
+  foundCount Int      @default(0)
+  /// Вичерпане насіння більше не обходимо.
+  exhausted Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, value])
+  @@index([exhausted, priority])
+}
+
+enum SeedType {
+  /// Схожі акаунти до вказаного профілю.
+  SIMILAR
+  HASHTAG
+  GEO
+}
+
 /// База розсилок — одна картка на Instagram-акаунт, незалежно від кількості кампаній.
 model BroadcastLead {
   id          String          @id @default(cuid())
