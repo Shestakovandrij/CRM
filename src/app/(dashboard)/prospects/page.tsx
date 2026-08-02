@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
@@ -26,6 +26,21 @@ interface Prospect {
   campaignId: string | null;
 }
 
+interface ScoutStatus {
+  running: boolean;
+  queued: boolean;
+  /** Бот не забрав замовлення за 10 хвилин — найпевніше вимкнений. */
+  stale?: boolean;
+  visited?: number;
+  limit?: number | null;
+  added?: number;
+  duplicates?: number;
+  withSite?: number;
+  lastSeed?: string | null;
+  error?: string | null;
+  finishedAt?: string | null;
+}
+
 const TABS: { key: ProspectStatus | "all"; label: string }[] = [
   { key: "NEW",      label: "Нові" },
   { key: "APPROVED", label: "Схвалені" },
@@ -46,6 +61,7 @@ export default function ProspectsPage() {
   const [messageText, setMessageText] = useState("");
   const [niche, setNiche] = useState("");
   const [prefix, setPrefix] = useState("Розвідка");
+  const [scoutError, setScoutError] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery<{ prospects: Prospect[]; counts: Record<string, number> }>({
     queryKey: ["prospects", tab, search],
@@ -60,6 +76,38 @@ export default function ProspectsPage() {
 
   const rows = useMemo(() => data?.prospects ?? [], [data]);
   const counts = data?.counts ?? {};
+
+  // Поки розвідка йде — питаємо стан частіше і підтягуємо нових кандидатів.
+  const { data: scout } = useQuery<ScoutStatus>({
+    queryKey: ["scout-status"],
+    queryFn: () => fetch("/api/prospects/scout").then((r) => r.json()),
+    refetchInterval: (q) => (q.state.data?.running ? 5000 : 20000),
+  });
+
+  const scoutMut = useMutation({
+    mutationFn: async () => {
+      const r = await fetch("/api/prospects/scout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
+      return body;
+    },
+    onSuccess: () => {
+      setScoutError(null);
+      qc.invalidateQueries({ queryKey: ["scout-status"] });
+    },
+    onError: (e: Error) => setScoutError(e.message),
+  });
+
+  // Нові кандидати зʼявляються поступово — оновлюємо таблицю під час розвідки.
+  useEffect(() => {
+    if (!scout?.running) return;
+    const t = setInterval(() => qc.invalidateQueries({ queryKey: ["prospects"] }), 15000);
+    return () => clearInterval(t);
+  }, [scout?.running, qc]);
 
   const statusMut = useMutation({
     mutationFn: ({ ids, status }: { ids: string[]; status: ProspectStatus }) =>
@@ -124,6 +172,29 @@ export default function ProspectsPage() {
               Бізнес-акаунти без сайту. Перевірте і зберіть у кампанію
             </p>
           </div>
+          <div className="flex items-center gap-2">
+          <button
+            onClick={() => scoutMut.mutate()}
+            disabled={scoutMut.isPending || scout?.running || scout?.queued}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border border-[var(--border)] text-sm font-medium text-[var(--text)] hover:border-[var(--accent)]/50 active:scale-95 transition-all disabled:opacity-60"
+          >
+            {scout?.running ? (
+              <>
+                <Loader2 size={16} className="animate-spin text-[var(--accent)]" />
+                <span className="hidden sm:inline">Шукаю</span> {scout.visited}/{scout.limit ?? "—"}
+              </>
+            ) : scout?.queued ? (
+              <>
+                <Loader2 size={16} className="animate-spin text-[var(--text-muted)]" />
+                У черзі
+              </>
+            ) : (
+              <>
+                <Radar size={16} className="text-[var(--accent)]" />
+                Розвідка
+              </>
+            )}
+          </button>
           <button
             onClick={() => setFormOpen(true)}
             disabled={selected.size === 0}
@@ -138,7 +209,32 @@ export default function ProspectsPage() {
               </span>
             )}
           </button>
+          </div>
         </div>
+
+        {scoutError && (
+          <div className="mx-4 sm:mx-6 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-400">
+            {scoutError}
+          </div>
+        )}
+        {scout?.running && (
+          <div className="mx-4 sm:mx-6 mb-3 px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-xs text-[var(--text-muted)]">
+            Розвідка триває{scout.lastSeed && <> — обходжу схожих на <span className="text-[var(--accent)]">@{scout.lastSeed}</span></>}.
+            Знайдено нових: <strong className="text-[var(--text)]">{scout.added}</strong>.
+            Можете закрити вкладку — бот працює на вашому компʼютері.
+          </div>
+        )}
+        {scout?.queued && !scout.stale && (
+          <div className="mx-4 sm:mx-6 mb-3 px-3 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-xs text-[var(--text-muted)]">
+            Замовлення прийнято. Бот забере його протягом хвилини.
+          </div>
+        )}
+        {scout?.stale && (
+          <div className="mx-4 sm:mx-6 mb-3 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-xs text-yellow-400">
+            Бот не відповідає вже 10 хвилин — найпевніше він вимкнений.
+            Запустіть його на компʼютері: <code>pm2 start crm-bot</code>
+          </div>
+        )}
 
         {/* ── Tabs ── */}
         <div className="flex items-center gap-1 px-4 sm:px-6 overflow-x-auto">

@@ -3,6 +3,7 @@ import { Bot } from "grammy";
 import { createServer, IncomingMessage, ServerResponse } from "http";
 import { InstagramBot } from "./instagram.js";
 import { CrmApi } from "./api.js";
+import { claimScoutRun, runScout, scoutState } from "./scout-run.js";
 
 const BOT_TOKEN   = process.env.BOT_TOKEN!;
 const BOT_SECRET  = process.env.BOT_SECRET!;
@@ -176,6 +177,13 @@ const httpServer = createServer(async (req, res) => {
     return send(res, 200, { isWorkerRunning, activeCampaignId });
   }
 
+  // GET /scout/status — локальна діагностика розвідки.
+  // CRM цим не користується: вона на Vercel і до цієї машини не достукається,
+  // тому кнопка працює через чергу замовлень у базі.
+  if (req.method === "GET" && url === "/scout/status") {
+    return send(res, 200, scoutState);
+  }
+
   // POST /register-chat — CRM реєструє chatId
   if (req.method === "POST" && url === "/register-chat") {
     try {
@@ -205,10 +213,27 @@ httpServer.listen(HTTP_PORT, () => {
 // ── Auto-poll fallback ────────────────────────────────────────────────
 // Якщо CRM не може достукатись до боту напряму — бот сам перевіряє кожні POLL_MS.
 async function startAutoPoll() {
-  console.log(`🔄 Auto-poll: кожні ${POLL_MS/1000}с перевіряю RUNNING кампанії`);
+  console.log(`🔄 Auto-poll: кожні ${POLL_MS/1000}с перевіряю RUNNING кампанії та замовлення розвідки`);
   while (true) {
     await sleep(POLL_MS);
     if (isWorkerRunning) continue;
+    // Кнопка «Розвідка» в CRM лишає замовлення — забираємо його тут.
+    // Розсилка важливіша: поки йде кампанія, розвідку не починаємо, щоб
+    // не навантажувати мережу двома браузерами одночасно.
+    if (!scoutState.running && !isWorkerRunning) {
+      const order = await claimScoutRun();
+      if (order) {
+        console.log(`🔍 Замовлення на розвідку прийнято (ліміт ${order.limit ?? "за замовчуванням"})`);
+        await notify("🔍 *Розвідку розпочато* — шукаю акаунти без сайту", { parse_mode: "Markdown" });
+        runScout({ runId: order.id, limit: order.limit ?? undefined })
+          .then((s) => notify(
+            `🔍 *Розвідку завершено*\nПереглянуто: ${s.visited}\nНових кандидатів: ${s.added}\nДублів: ${s.duplicates}\nІз сайтом: ${s.withSite}`,
+            { parse_mode: "Markdown" },
+          ))
+          .catch((e) => notify(`❌ Розвідка впала: ${(e as Error).message}`));
+      }
+    }
+
     try {
       const campaigns = await api.getCampaigns();
       const running = campaigns.find((c) => c.status === "RUNNING");

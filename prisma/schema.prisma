@@ -210,6 +210,35 @@ enum ProspectStatus {
   QUEUED
 }
 
+/// Замовлення на розвідку. CRM живе на Vercel і не може достукатись до бота
+/// на домашньому компʼютері, тому кнопка лишає запис тут, а бот його забирає.
+model ScoutRun {
+  id     String         @id @default(cuid())
+  status ScoutRunStatus @default(REQUESTED)
+  limit  Int?
+
+  visited    Int     @default(0)
+  added      Int     @default(0)
+  duplicates Int     @default(0)
+  withSite   Int     @default(0)
+  lastSeed   String?
+  error      String?
+
+  requestedAt DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  @@index([status, requestedAt])
+}
+
+enum ScoutRunStatus {
+  /// Кнопку натиснуто, бот ще не забрав.
+  REQUESTED
+  RUNNING
+  DONE
+  FAILED
+}
+
 /// Точки входу для розвідки: від кого відштовхуватись у пошуку.
 model ProspectSeed {
   id       String   @id @default(cuid())
