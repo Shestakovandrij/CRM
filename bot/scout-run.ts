@@ -145,6 +145,9 @@ export async function runScout(opts: ScoutOptions = {}): Promise<ScoutState> {
             batch.push({ ...p, source: `similar:${seed.value}` });
             log(`   ${p.externalUrl ? "🔗" : "✅"} @${p.instagram} — ${p.category ?? "без категорії"}, ${p.followers ?? "?"} підписників`);
           }
+          // Звіт після кожного профілю: без нього CRM не бачить руху між
+          // пачками і помилково вважає бота мертвим.
+          await report(opts.runId, { visited: scoutState.visited, limit });
           await sleep(rnd(minDelay, maxDelay));
         }
 

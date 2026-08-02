@@ -104,6 +104,8 @@ export async function PATCH(req: Request) {
     where: { id: body.id },
     data: {
       ...(body.visited != null && { visited: Number(body.visited) }),
+      // Кнопка ліміт не задає — бот повідомляє той, що взяв із .env.
+      ...(body.limit != null && { limit: Number(body.limit) }),
       ...(body.added != null && { added: Number(body.added) }),
       ...(body.duplicates != null && { duplicates: Number(body.duplicates) }),
       ...(body.withSite != null && { withSite: Number(body.withSite) }),
